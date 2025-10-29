@@ -1,26 +1,26 @@
 # Antoni Matczuk Jakub Szubzda lab 1 stero
 
 # zad 1
-wywołanie tego polecenia
+Wywołaliśmy podane w instrukcji polecenia
 ``` bash
 vcs import --input https://raw.githubusercontent.com/RCPRG-
 ros-pkg/STERO2/refs/heads/iron/tiago_public_stero.repos
 src
 ```
 
-miało efekt pobrania potrzebnych pluginów do src
+które pobrały wszystkie potrzebne pluginy do src.
 
 ---
 # zad 2
-te polecenia
+Wywołaliśmy podane w instrukcji polecenia
 ```bash
 source /opt/ros/iron/setup.bash
 colcon build --symlink-install
 ```
-załadowały środowisko ROS 2 Iron, 
+załadowały one środowisko ROS 2 Iron,
 spowodowały zbudowanie wszystkich potrzebnych paczek w katalogu tiago
 
-Co zmienia --symlink-install:
+Co zmienia `--symlink-install`:
 - zamiast kopiować pliki do install/ tworzy dowiązania symboliczne do zbudowanych/źródłowych plików (zwł. dla pakietów Python i zasobów),
 - przyspiesza przebudowy i zmniejsza zużycie miejsca; zmiany w plikach Pythona widoczne od razu bez reinstalacji,
 - nie zmienia kompilacji; binaria/biblioteki pochodzą z build/.
@@ -32,9 +32,7 @@ Co zmienia --symlink-install:
 ``` bash
 student@pantera:~/stero$ cd src/
 student@pantera:~/stero/src$ source install/local_setup.bash
-student@pantera:~/stero/src$ ros2 run my_package my_node
-Package 'my_package' not found
-student@pantera:~/stero/src$ ros2 run hello_stero hello_stero_node
+student@pantera:~/stero/src$ ros2 run hello_stero hello_stero_node # to polecenie uruchomiło węzęł
 hello world hello_stero package
 ```
 
@@ -48,6 +46,7 @@ Action clients: 1
 Action servers: 1
     /move_group
 ```
+Serwer `/move_group` udostępnia akcję `/execute_trajectory` a klient `/play_motion2_move_group` z niej korzysta.
 
 # zad 5
 
@@ -60,6 +59,7 @@ Action clients: 2
 Action servers: 1
     /move_group
 ```
+Do listy klientów dołączył RVIZ, ponieważ dodaliśmy w nim wizualizację planowania ruchu.
 
 # zad 6
 ``` bash
@@ -140,9 +140,12 @@ student@pantera:~/stero$ ros2 node info /move_group_private_96272869041408
 
   Action Clients:
 ```
+`/move_group` to główny węzeł MoveIt – tutaj dzieje się planowanie ruchu. Da się z niego wyciągnąć IK/FK, zaplanować ścieżkę (także kartezjańską), zmieniać scenę planowania i parametry plannerów. Wystawia też akcje do wykonywania trajektorii i obsługi żądań ruchu. Potem dogaduje się z kontrolerami, żeby plan faktycznie został wykonany.
+
+`/move_group_private_<ID>` to pomocniczy węzeł od „sceny” (PlanningScene). Zbiera stan robota i obiekty kolizyjne, publikuje `monitored_planning_scene` i pozwala podejrzeć aktualną scenę przez serwis. Dzięki temu główny `/move_group` ma świeży obraz świata. Ten węzeł sam niczego nie planuje ani nie wykonuje – tylko dostarcza dane.
 
 # zad 7
-
+`/moveit_simple_controller_manager` dostaje informacje jaki ruch ma wykonać od węzłów `/move_group*`, a następnie rozdysponowywuje jego wykonanie pomiędzy kontrolery napędów. Graf z rqt znajduje się w `photos/rosgraph_zad_7.png`
 
 # zad 8
 ``` bash
@@ -233,7 +236,8 @@ state interfaces
 	wrist_ft_sensor/torque.y
 	wrist_ft_sensor/torque.z
 ```
-
+Interfejsy stanu (state_interfaces) dla pierwszego złącza ra
+mienia (arm_1_joint):
 ``` bash
 student@pantera:~/stero$ ros2 control list_hardware_interfaces | grep arm_1_joint
 [WARN] [1760603139.514779005] [_ros2cli_71246]: Failed getting a result from calling /controller_manager/list_hardware_interfaces in 0.0. (Attempt 1 of 3.)
@@ -244,3 +248,19 @@ student@pantera:~/stero$ ros2 control list_hardware_interfaces | grep arm_1_join
 	arm_1_joint/position
 	arm_1_joint/velocity
 ```
+# zad 9
+Na podstawie schematu ros2_control (controller_diagram.gv.pdf) i naszego wyniku z terminala:
+
+- arm_1_joint (command):
+	- position
+	- velocity
+	- effort
+- arm_1_joint(state):
+	- position, velocity, effort
+- Połączenia w ros2_control dla tego złącza (w skrócie):
+	- joint_trajectory_controller (arm) → arm_1_joint/position (command)
+	- arm_1_joint/{position, velocity, effort} → joint_state_broadcaster (state)
+	- controller_manager zarządza kontrolerami i spina je ze sprzętem
+
+# Zad 10
+Trzeba zaplanować wykonalny ruch. Warto pamiętać o odpowiednim układzie odniesienia tak aby uniknąć błedów o nieosiągalnej pozycji. Po uruchomieniu węzła oraz zadaniu odpowiedniej pozycji w poprawnym układzie odniesienia, manipulator robota poruszył sie w symulacji do zadanej pozy.
