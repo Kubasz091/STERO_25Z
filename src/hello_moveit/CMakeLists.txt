@@ -24,6 +24,14 @@ ament_target_dependencies(
   "rclcpp"
 )
 
+install(DIRECTORY
+  launch
+  worlds
+  maps
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 install(TARGETS hello_moveit
   DESTINATION lib/${PROJECT_NAME})
 
