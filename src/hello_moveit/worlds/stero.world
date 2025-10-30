@@ -1,5 +1,6 @@
 <sdf version='1.7'>
   <world name='default'>
+    <plugin name='gazebo_ros_state' filename='libgazebo_ros_state.so'/>
     <light name='sun' type='directional'>
       <cast_shadows>1</cast_shadows>
       <pose>0 0 10 0 -0 0</pose>
@@ -90,10 +91,20 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>391 365000000</sim_time>
-      <real_time>542 944373439</real_time>
-      <wall_time>1761853077 858708624</wall_time>
-      <iterations>391365</iterations>
+      <sim_time>1531 541000000</sim_time>
+      <real_time>995 545607808</real_time>
+      <wall_time>1761863864 857508147</wall_time>
+      <iterations>661578</iterations>
+      <model name='green_cube_3'>
+        <pose>0.871694 0.015927 0.552499 -0 -0 -8e-06</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose>0.871694 0.015927 0.552499 -0 -0 -8e-06</pose>
+          <velocity>-0 0 5e-06 -3e-06 -1e-06 -0</velocity>
+          <acceleration>-0 -0 0 0 -0 0</acceleration>
+          <wrench>-0 -0 0 0 -0 0</wrench>
+        </link>
+      </model>
       <model name='ground_plane'>
         <pose>0 0 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -105,16 +116,15 @@
         </link>
       </model>
       <model name='table'>
-        <pose>0.792756 -0.006302 0 0 -0 0</pose>
+        <pose>1.18867 0.012399 0 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>0.792756 -0.006302 0 0 -0 0</pose>
+          <pose>1.18867 0.012399 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-
       <light name='sun'>
         <pose>0 0 10 0 -0 0</pose>
       </light>
@@ -318,7 +328,7 @@
     </model>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>1.46395 2.60405 3.04862 0 0.737796 -1.99899</pose>
+        <pose>1.2389 -5.13581 0.868013 -0 -0.062204 1.3642</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>

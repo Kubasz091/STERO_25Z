@@ -1,0 +1,62 @@
+ros2 topic echo /model_states --once
+A message was lost!!!
+        total count change:1
+        total count: 1---
+name:
+- ground_plane
+- table
+- tiago
+pose:
+- position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 0.792756
+    y: -0.006302
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: -1.8661679890633054e-08
+    y: -2.041450851474145e-07
+    z: -0.0021474603506604906
+  orientation:
+    x: -3.374674567129193e-06
+    y: 0.00013716391720494824
+    z: -4.680603987614706e-07
+    w: 0.9999999905872262
+twist:
+- linear:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  angular:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- linear:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  angular:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- linear:
+    x: 6.894739085353136e-05
+    y: 3.53440695240485e-05
+    z: -0.01177309129230581
+  angular:
+    x: 1.5869187108692164e-05
+    y: -0.0005302004254505888
+    z: 0.00016798617839269343
+---
