@@ -243,7 +243,7 @@ ros2 service call /get_entity_state gazebo_msgs/srv/GetEntityState "{name: 'tiag
 requester: making request: gazebo_msgs.srv.GetEntityState_Request(name='tiago::wrist_ft_link', reference_frame='green_cube_3::link')
 
 response:
-gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1637, nanosec=363000000), frame_id='green_cube_3::link'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=-0.11715316595570938, y=0.011255571747410821, z=0.17084676237693494), orientation=geometry_msgs.msg.Quaternion(x=-0.01889789731646686, y=-0.9508321331087073, z=0.0006154360172647764, w=-0.30912901087324474)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-0.0003437078388581281, y=0.00015858456514122865, z=-0.014847305736156743), angular=geometry_msgs.msg.Vector3(x=0.0005012500353512025, y=0.00020410866515100648, z=0.0013159494995272343)), reference_frame=''), success=True)
+gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1809, nanosec=258000000), frame_id='green_cube_3::link'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.005071250542391959, y=-0.001078510009209965, z=0.232017062226551), orientation=geometry_msgs.msg.Quaternion(x=0.997776211667235, y=-0.06661632963077202, z=-0.0019340518557168878, w=0.0010749422891682054)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-0.0009333835761639284, y=0.0022413252256606783, z=-0.02600894296413523), angular=geometry_msgs.msg.Vector3(x=0.0024435304333426766, y=-0.0014682882225467188, z=-0.0026977951713324914)), reference_frame=''), success=True)
 
 ```
 ## E wzgledem O (T_EO = T_EF ∘ T_FO)
@@ -269,7 +269,7 @@ waiting for service to become available...
 requester: making request: gazebo_msgs.srv.GetEntityState_Request(name='tiago::wrist_ft_link', reference_frame='tiago::base_footprint')
 
 response:
-gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1817, nanosec=444000000), frame_id='tiago::base_footprint'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.756924645849133, y=0.027207768736044545, z=0.7229894810121328), orientation=geometry_msgs.msg.Quaternion(x=-0.018892318345926508, y=-0.9513398384679023, z=0.0006519781544774585, w=-0.3075632731258205)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-0.00045957726516427657, y=0.00017136587312620562, z=-0.0027253052122070925), angular=geometry_msgs.msg.Vector3(x=0.0005761047888237207, y=0.0020631866171665503, z=0.0012312165507350151)), reference_frame=''), success=True)
+gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1995, nanosec=291000000), frame_id='tiago::base_footprint'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.39332776673891007, y=-0.09863482333063534, z=0.7868290413468051), orientation=geometry_msgs.msg.Quaternion(x=0.9977762936492878, y=-0.06662188357063846, z=-0.0016919394901435264, w=0.0010629213293110872)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-0.0009908262546113322, y=0.002241275188744823, z=-0.014251062105096047), angular=geometry_msgs.msg.Vector3(x=0.0025067494139460844, y=-0.0010613873228364251, z=-0.00269660655380948)), reference_frame=''), success=True)
 ```
 
 ## O względem B
@@ -279,9 +279,30 @@ waiting for service to become available...
 requester: making request: gazebo_msgs.srv.GetEntityState_Request(name='green_cube_3::link', reference_frame='tiago::base_footprint')
 
 response:
-gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1859, nanosec=320000000), frame_id='tiago::base_footprint'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.8735142103011186, y=0.01594947998641261, z=0.5517736488522262), orientation=geometry_msgs.msg.Quaternion(x=-7.380010184172177e-06, y=0.0016454448241037037, z=1.4293460463888912e-06, w=0.9999986462264953)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-6.700983781698309e-05, y=1.30021137441599e-05, z=0.012120791482537675), angular=geometry_msgs.msg.Vector3(x=7.052908006112184e-05, y=0.0018590560483133936, z=-8.307366800166921e-05)), reference_frame=''), success=True)
+gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=2006, nanosec=862000000), frame_id='tiago::base_footprint'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.38836927153429057, y=-0.09756135619150655, z=0.5548355697949557), orientation=geometry_msgs.msg.Quaternion(x=-5.262173338224914e-06, y=-0.00024179374027266792, z=-4.852887181252426e-06, w=0.9999999707422726)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-7.003816584000018e-05, y=2.1610094366687647e-07, z=0.011758353089382514), angular=geometry_msgs.msg.Vector3(x=6.192646530910378e-05, y=0.00040694896052922866, z=-8.816560441352007e-09)), reference_frame=''), success=True)
 ```
 
 # Zadanie 7 - nie wykonane jako że 0 pkt za nie
 
 # Zadanie 8
+stworzono skrypt `one_grasp.cpp`. Skonfigurowano Rviz, zgodnie z tutorialem do którego link był w slajdach z wykładu. Otrzymano i wyświetlono pozycje kostki, która została manualnie sprawdzona w gazebo
+
+``` bash
+ros2 run hello_moveit one_grasp --ros-args -p group:=arm_torso -p object:=green_cube_3 -p reference_frame:=tiago::base_footprint -p rviz_frame:=base_footprint -p use_sim_time:=true
+[INFO] [1761905904.180772681] [moveit_rdf_loader.rdf_loader]: Loaded robot model in 1968.43 seconds
+[INFO] [1761905904.180925796] [moveit_robot_model.robot_model]: Loading robot model 'tiago'...
+[INFO] [1761905904.180948478] [moveit_robot_model.robot_model]: No root/virtual joint specified in SRDF. Assuming fixed joint
+
+--- URDF Warnings ---
+
+[INFO] [1761905904.369498300] [move_group_interface]: Ready to take commands for planning group arm_torso.
+[INFO] [1761905904.373717467] [one_grasp.remote_control]: RemoteControl Ready.
+[INFO] [1761905904.384077222] [one_grasp]: Object '' in 'tiago::base_footprint': pos [0.388 -0.098 0.555], quat [-0.000 -0.000 -0.000 1.000]
+```
+
+_uwaga_: _parametr `use_sim_time` okazał się tutaj kluczowy, bez niego w rviz errory zwiazane z czase i tf_
+
+![alt text](photos\zad8.png)
+
+# zadanie 9
+

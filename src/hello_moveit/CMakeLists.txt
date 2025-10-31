@@ -10,10 +10,12 @@ find_package(ament_cmake REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(gazebo_msgs REQUIRED)
 
 
 add_executable(hello_moveit src/hello_moveit.cpp)
 add_executable(print_frames src/zad5.cpp)
+add_executable(one_grasp src/one_grasp.cpp)
 
 target_include_directories(hello_moveit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -35,6 +37,13 @@ ament_target_dependencies(
   "rclcpp"
 )
 
+ament_target_dependencies(one_grasp
+  "rclcpp"
+  "moveit_ros_planning_interface"
+  "moveit_visual_tools"
+  "gazebo_msgs"
+)
+
 install(DIRECTORY
   launch
   worlds
@@ -47,6 +56,8 @@ install(DIRECTORY
 install(TARGETS print_frames DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS hello_moveit DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS one_grasp DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
