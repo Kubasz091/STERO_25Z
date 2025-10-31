@@ -43,4 +43,6 @@ ros2 node info <node_name>
 ros2 topic type <topic_name>
 ros2 service type <service_name>
 ros2 interface show <topic/service_name>
+
+ros2 service call /get_entity_state gazebo_msgs/srv/GetEntityState "{<args>}"
 ```

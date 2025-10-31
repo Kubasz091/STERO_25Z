@@ -304,5 +304,30 @@ _uwaga_: _parametr `use_sim_time` okazał się tutaj kluczowy, bez niego w rviz 
 
 ![alt text](photos\zad8.png)
 
-# zadanie 9
+# zadanie 9 i 10
+zadania 9 i 10 zrobiono jednocześnie, jako że obejmowały podobny zakres.
+zmodyfikowano skrypt `one_grasp.cpp` aby spełniał założenia, i uruchomiono go:
 
+``` bash
+ros2 run hello_moveit one_grasp --ros-args \
+  -p group:=arm_torso \
+  -p object:=green_cube_3 \
+  -p reference_frame:=tiago::base_footprint \
+  -p rviz_frame:=base_footprint \
+  -p approach_distance:=0.12 \
+  -p use_sim_time:=true
+
+[INFO] [1761908133.889214360] [moveit_rdf_loader.rdf_loader]: Loaded robot model in 2765.76 seconds
+[INFO] [1761908133.889503031] [moveit_robot_model.robot_model]: Loading robot model 'tiago'...
+[INFO] [1761908133.889578250] [moveit_robot_model.robot_model]: No root/virtual joint specified in SRDF. Assuming fixed joint
+
+--- WARNINGS ---
+
+[INFO] [1761908134.039783481] [move_group_interface]: Ready to take commands for planning group arm_torso.
+[INFO] [1761908134.047633571] [one_grasp.remote_control]: RemoteControl Ready.
+[INFO] [1761908134.057078755] [one_grasp]: Object 'green_cube_3::link' in 'tiago::base_footprint': pos [0.388 -0.098 0.555], quat [-0.000 -0.000 -0.000 1.000]
+[INFO] [1761908134.384962270] [one_grasp]: E_grasp in 'base_footprint': pos [0.393 -0.099 0.795] quat [-0.531 -0.466 0.533 -0.465]
+[INFO] [1761908134.385089225] [one_grasp]: E_pregrasp (d=0.120m) in 'base_footprint': pos [0.393 -0.098 0.915] quat [-0.531 -0.466 0.533 -0.465]
+```
+
+![alt text](photos\zad9_10.png)

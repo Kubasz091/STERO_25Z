@@ -11,6 +11,7 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(gazebo_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 
 add_executable(hello_moveit src/hello_moveit.cpp)
@@ -37,11 +38,13 @@ ament_target_dependencies(
   "rclcpp"
 )
 
-ament_target_dependencies(one_grasp
+ament_target_dependencies(
+  one_grasp
   "rclcpp"
   "moveit_ros_planning_interface"
   "moveit_visual_tools"
   "gazebo_msgs"
+  "tf2_ros"
 )
 
 install(DIRECTORY
