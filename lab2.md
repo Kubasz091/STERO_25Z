@@ -331,3 +331,96 @@ ros2 run hello_moveit one_grasp --ros-args \
 ```
 
 ![alt text](photos\zad9_10.png)
+
+# zadanie 11 i 12
+zmodyfikowano skrypt `one_grasp.cpp` aby wykonywał zalecone czynności. Przebieg ich przedstawiono na zdjeciach
+
+``` bash
+ros2 run hello_moveit one_grasp --ros-args \
+  -p group:=arm_torso \
+  -p reference_frame:=tiago::base_footprint \
+  -p rviz_frame:=base_footprint \
+  -p object:=green_cube_3 \
+  -p gripper_group:=gripper \
+  -p finger_left_joint:=gripper_left_finger_joint \
+  -p finger_right_joint:=gripper_right_finger_joint \
+  -p gripper_open:=0.044 -p gripper_close:=0.035 \
+  -p torso_up:=0.35 -p arm1_angle:=1.5708 -p lift_height:=0.05 \
+  -p approach_distance:=0.12 \
+  -p use_sim_time:=true
+[INFO] [1761914258.335666050] [moveit_rdf_loader.rdf_loader]: Loaded robot model in 1883.36 seconds
+[INFO] [1761914258.335829043] [moveit_robot_model.robot_model]: Loading robot model 'tiago'...
+[INFO] [1761914258.335894023] [moveit_robot_model.robot_model]: No root/virtual joint specified in SRDF. Assuming fixed joint
+
+--- WARNINGS ---
+
+[INFO] [1761914258.505242777] [move_group_interface]: Ready to take commands for planning group arm_torso.
+[INFO] [1761914258.509728545] [one_grasp.remote_control]: RemoteControl Ready.
+[INFO] [1761914258.521250903] [one_grasp]: Object 'green_cube_3::link' in 'tiago::base_footprint': pos [0.388 -0.098 0.555], quat [-0.000 -0.000 -0.000 1.000]
+[INFO] [1761914258.855567052] [one_grasp]: E_grasp in 'base_footprint': pos [0.393 -0.099 0.795] quat [-0.531 -0.466 0.533 -0.465]
+[INFO] [1761914258.855724925] [one_grasp]: E_pregrasp (d=0.120m) in 'base_footprint': pos [0.393 -0.098 0.915] quat [-0.531 -0.466 0.533 -0.465]
+[INFO] [1761914259.241541125] [move_group_interface]: Ready to take commands for planning group gripper.
+[INFO] [1761914259.245603690] [move_group_interface]: MoveGroup action client/server ready
+[INFO] [1761914259.250241434] [move_group_interface]: Planning request accepted
+[INFO] [1761914259.453365448] [move_group_interface]: Planning request complete!
+[INFO] [1761914259.453914863] [move_group_interface]: time taken to generate plan: 0.0267501 seconds
+[INFO] [1761914259.453987338] [one_grasp]: Raise torso plan: OK
+[INFO] [1761914259.458724454] [move_group_interface]: Execute request accepted
+[INFO] [1761914279.335640998] [move_group_interface]: Execute request success!
+[INFO] [1761914279.335783933] [one_grasp]: Raise torso exec: OK
+[INFO] [1761914279.336499553] [move_group_interface]: MoveGroup action client/server ready
+[INFO] [1761914279.338139188] [move_group_interface]: Planning request accepted
+[INFO] [1761914279.518169158] [move_group_interface]: Planning request complete!
+[INFO] [1761914279.519478310] [move_group_interface]: time taken to generate plan: 0.0335651 seconds
+[INFO] [1761914279.519586791] [one_grasp]: Rotate arm_1 to 90deg plan: OK
+[INFO] [1761914279.522162711] [move_group_interface]: Execute request accepted
+[INFO] [1761914282.901684438] [move_group_interface]: Execute request success!
+[INFO] [1761914282.901863019] [one_grasp]: Rotate arm_1 to 90deg exec: OK
+[INFO] [1761914282.902501064] [move_group_interface]: MoveGroup action client/server ready
+[INFO] [1761914282.906055521] [move_group_interface]: Planning request accepted
+[INFO] [1761914283.076397207] [move_group_interface]: Planning request complete!
+[INFO] [1761914283.077465621] [move_group_interface]: time taken to generate plan: 0.0649676 seconds
+[INFO] [1761914283.077594441] [one_grasp]: Open gripper plan: OK
+[INFO] [1761914283.079362906] [move_group_interface]: Execute request accepted
+[INFO] [1761914291.250336487] [move_group_interface]: Execute request success!
+[INFO] [1761914291.250924450] [one_grasp]: Open gripper exec: OK
+[INFO] [1761914291.251608060] [move_group_interface]: MoveGroup action client/server ready
+[INFO] [1761914291.253035361] [move_group_interface]: Planning request accepted
+[INFO] [1761914291.517692532] [move_group_interface]: Planning request complete!
+[INFO] [1761914291.517858761] [move_group_interface]: time taken to generate plan: 0.0859204 seconds
+[INFO] [1761914291.517898384] [one_grasp]: Pregrasp plan: OK
+[INFO] [1761914291.521838905] [move_group_interface]: Execute request accepted
+[INFO] [1761914306.597049150] [move_group_interface]: Execute request success!
+[INFO] [1761914306.597911194] [one_grasp]: Pregrasp exec: OK
+[INFO] [1761914306.598725606] [move_group_interface]: MoveGroup action client/server ready
+[INFO] [1761914306.601702343] [move_group_interface]: Planning request accepted
+[INFO] [1761914306.819292374] [move_group_interface]: Planning request complete!
+[INFO] [1761914306.820325318] [move_group_interface]: time taken to generate plan: 0.0269923 seconds
+[INFO] [1761914306.820389507] [one_grasp]: Grasp pose plan: OK
+[INFO] [1761914306.822632137] [move_group_interface]: Execute request accepted
+[INFO] [1761914313.652378600] [move_group_interface]: Execute request success!
+[INFO] [1761914313.653154231] [one_grasp]: Grasp pose exec: OK
+[INFO] [1761914313.655121656] [move_group_interface]: MoveGroup action client/server ready
+[INFO] [1761914313.657945641] [move_group_interface]: Planning request accepted
+[INFO] [1761914313.745859488] [move_group_interface]: Planning request complete!
+[INFO] [1761914313.745929180] [move_group_interface]: time taken to generate plan: 0.0231453 seconds
+[INFO] [1761914313.746234931] [one_grasp]: Close gripper plan: OK
+[INFO] [1761914313.749200193] [move_group_interface]: Execute request accepted
+[INFO] [1761914315.469478256] [move_group_interface]: Execute request success!
+[INFO] [1761914315.470910860] [one_grasp]: Close gripper exec: OK
+[INFO] [1761914315.777590151] [move_group_interface]: MoveGroup action client/server ready
+[INFO] [1761914315.779308542] [move_group_interface]: Planning request accepted
+[INFO] [1761914316.020293162] [move_group_interface]: Planning request complete!
+[INFO] [1761914316.020850177] [move_group_interface]: time taken to generate plan: 0.0454769 seconds
+[INFO] [1761914316.020909848] [one_grasp]: Lift 5cm plan: OK
+[INFO] [1761914316.027988700] [move_group_interface]: Execute request accepted
+[INFO] [1761914319.023068180] [move_group_interface]: Execute request success!
+[INFO] [1761914319.023430924] [one_grasp]: Lift 5cm exec: OK
+[INFO] [1761914319.023528314] [one_grasp]: Grasp sequence: done.
+```
+
+![pozycja init](photos\zad11_12_1.png)
+![pozycja nad stolem](photos\zad11_12_2.png)
+![pre_grasp](photos\zad11_12_3.png)
+![grasp](photos\zad11_12_4.png)
+![pickup](photos\zad11_12_5.png)

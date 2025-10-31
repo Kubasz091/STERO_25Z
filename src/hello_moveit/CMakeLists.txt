@@ -12,6 +12,10 @@ find_package(moveit_visual_tools REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(gazebo_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(moveit_msgs REQUIRED)
+find_package(shape_msgs REQUIRED)
 
 
 add_executable(hello_moveit src/hello_moveit.cpp)
@@ -24,6 +28,7 @@ target_include_directories(hello_moveit PUBLIC
 
 target_compile_features(hello_moveit PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_features(print_frames PUBLIC c_std_99 cxx_std_17)
+target_compile_features(one_grasp PUBLIC c_std_99 cxx_std_17)
 
 ament_target_dependencies(
   hello_moveit
@@ -45,7 +50,12 @@ ament_target_dependencies(
   "moveit_visual_tools"
   "gazebo_msgs"
   "tf2_ros"
+  "geometry_msgs"
+  "moveit_msgs"
+  "shape_msgs"
 )
+
+target_link_libraries(one_grasp Eigen3::Eigen)
 
 install(DIRECTORY
   launch
@@ -57,9 +67,7 @@ install(DIRECTORY
 )
 
 install(TARGETS print_frames DESTINATION lib/${PROJECT_NAME})
-
 install(TARGETS hello_moveit DESTINATION lib/${PROJECT_NAME})
-
 install(TARGETS one_grasp DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
