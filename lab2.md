@@ -1,15 +1,18 @@
 # zadanie 1
-stworzyliśmy pliki launch jak w poleceniu/wskazówkach
+
+Stworzyliśmy pliki launch według poleceń i wskazówek
 
 # zadanie 2
+
 to polecenie uruchamia system z nowym światem:
 
-``` bash
+```bash
 ros2 launch hello_moveit  tiago_gazebo.launch.py navigation:=True moveit:=True is_public_sim:=True use_grasp_fix_plugin:=True world_name:=stero
 ```
 
 # zadanie 3
-``` bash
+
+```bash
 ros2 node info /gazebo_ros_state
 /gazebo_ros_state
   Subscribers:
@@ -36,15 +39,18 @@ ros2 node info /gazebo_ros_state
 
   Action Clients:
 ```
+
 ## Publishers:
-  - /link_states: gazebo_msgs/msg/LinkStates
-  - /model_states: gazebo_msgs/msg/ModelStates
+
+- **/link_states: gazebo_msgs/msg/LinkStates** - publikuje pozycje i prędkości wszystkich linków w symulacji względem układu świata. Zawiera nazwy linków, ich pozy (pozycja + orientacja) oraz prędkości (liniowa + kątowa).
+- **/model_states: gazebo_msgs/msg/ModelStates** - publikuje pozycje i prędkości wszystkich modeli w symulacji względem układu świata. Zawiera nazwy modeli, ich pozy (pozycja + orientacja) oraz prędkości (liniowa + kątowa).
 
 ## Service Servers:
-  - /get_entity_state: gazebo_msgs/srv/GetEntityState
-  - /set_entity_state: gazebo_msgs/srv/SetEntityState
 
-``` bash
+- **/get_entity_state: gazebo_msgs/srv/GetEntityState** - umożliwia pobranie aktualnej pozy i prędkości wybranej encji (model, link, kolizja, światło) względem wybranego układu odniesienia. Zwraca pozycję, orientację, prędkość liniową i kątową.
+- **/set_entity_state: gazebo_msgs/srv/SetEntityState** - umożliwia ustawienie pozy i prędkości wybranej encji względem wybranego układu odniesienia. Można w ten sposób teleportować obiekty lub nadawać im prędkość początkową.
+
+```bash
 ros2 topic type /model_states | xargs ros2 interface show
 # broadcast all model states in world frame
 string[] name                 # model names
@@ -69,7 +75,9 @@ geometry_msgs/Twist[] twist   # desired twist in world frame
                 float64 z
 ```
 
-``` bash
+Topic `/model_states` zawiera tablice z nazwami wszystkich modeli w symulacji oraz odpowiadające im pozy i prędkości. Każdy model ma pozycję (x, y, z), orientację (kwaternion), prędkość liniową i kątową. Jest to broadcast wszystkich stanów modeli w układzie świata.
+
+```bash
 ros2 topic type /link_states  | xargs ros2 interface show
 # broadcast all link states in world frame
 string[] name                 # link names
@@ -94,7 +102,9 @@ geometry_msgs/Twist[] twist   # desired twist in world frame
                 float64 z
 ```
 
-``` bash
+Topic `/link_states` zawiera tablice z nazwami wszystkich linków w symulacji oraz odpowiadające im pozy i prędkości. Każdy link (element robota lub obiektu) ma pozycję (x, y, z), orientację (kwaternion), prędkość liniową i kątową. Jest to broadcast wszystkich stanów linków w układzie świata.
+
+```bash
 ros2 service type /get_entity_state | xargs ros2 interface show
 string name                          # Entity's scoped name.
                                      # An entity can be a model, link, collision, light, etc.
@@ -137,7 +147,14 @@ gazebo_msgs/EntityState state        # Contains pose and twist.
 bool success                         # Return true if get was successful. If false, the state contains garbage.
 ```
 
-``` bash
+Serwis `/get_entity_state` służy do pobierania aktualnego stanu wybranej encji (model, link, kolizja, światło). W żądaniu podajemy:
+
+- `name` - nazwę encji w notacji Gazebo (np. `tiago::wrist_ft_link`)
+- `reference_frame` - układ odniesienia względem którego chcemy otrzymać pozę i prędkość (domyślnie układ świata)
+
+W odpowiedzi otrzymujemy pozę (pozycja + orientacja jako kwaternion) oraz prędkość (liniowa + kątowa) encji względem wybranego układu. Serwis zwraca również `success` wskazujący powodzenie operacji.
+
+```bash
 ros2 service type /set_entity_state | xargs ros2 interface show
 gazebo_msgs/EntityState state   # Entity state to set to.
         string name                 #
@@ -169,12 +186,24 @@ gazebo_msgs/EntityState state   # Entity state to set to.
 bool success                    # Return true if setting state was successful.
 ```
 
+Serwis `/set_entity_state` służy do ustawiania stanu wybranej encji w symulacji. W żądaniu podajemy:
+
+- `state.name` - nazwę encji w notacji Gazebo (np. `green_cube_3::link`)
+- `state.pose` - docelową pozę (pozycja + orientacja jako kwaternion)
+- `state.twist` - docelową prędkość (liniowa + kątowa)
+- `state.reference_frame` - układ odniesienia względem którego podajemy pozę (domyślnie układ świata)
+
+Serwis umożliwia "teleportowanie" obiektów do wybranej pozycji lub nadawanie im prędkości początkowej. Jest przydatny do resetowania pozycji obiektów, umieszczania ich w określonych miejscach lub testowania dynamiki. Zwraca `success` wskazujący czy operacja się powiodła.
+
 # zadanie 4
-zrobiono jak w poleceniu, dodano w cmake install na folder models
+
+Zrobiono tak jak w poleceniu. Stworzono katalog models i dodano do niego 3 modele. Dodano owy katalog do instalowanych folderów w CMakeLists.txt.
 
 # zadanie 5
+
 stworzono node-a, którego celem jest wykorzystanie klasy MoveGroupInterface, w celu odczytania nazw układów B i E
-``` cpp
+
+```cpp
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 
@@ -189,8 +218,10 @@ int main(int argc, char** argv) {
   return 0;
 }
 ```
+
 efektem jego wywołania (pomijając warningi) było:
-``` bash
+
+```bash
 ros2 run hello_moveit print_frames --ros-args -p group:=arm_torso
 [INFO] [1761860177.071313753] [moveit_rdf_loader.rdf_loader]: Loaded robot model in 3.08074 seconds
 [INFO] [1761860177.071416864] [moveit_robot_model.robot_model]: Loading robot model 'tiago'...
@@ -202,11 +233,10 @@ ros2 run hello_moveit print_frames --ros-args -p group:=arm_torso
 [INFO] [1761860177.224604367] [print_frames]: B (planning frame): base_footprint
 [INFO] [1761860177.224799629] [print_frames]: E (end effector):  arm_tool_link
 ```
-## **mam wątpliwość czy nie brać jako E `gripper_grasping_frame` - spytać sie jak mają inni**
-chyba sobie jednak sam odpowiedzialem bo parent `wrist_ft_link` to `arm_tool_link`
 
 jako układ F wybrano `wrist_ft_link` z:
-``` bash
+
+```bash
 ros2 topic echo /link_states --once
 name:
 - ground_plane::link
@@ -230,15 +260,18 @@ name:
 ```
 
 ## Pozycja F względem E:
+
 - x: 0.007849999703466892
 - y: 0
 - z: 0
 
 # zad 6
-otworzono chwytak używając rviz i motionPlanning
+
+Otworzono chwytak, a następnie ustawiono go w taki sposób, aby szczęki obejmowały obiekt na rys. 1. Użyto rviz i motionPlanning. Następnie odczytano pozycje istotnych układów, które są opisane poniżej:
 
 ## F wzgledem O
-``` bash
+
+```bash
 ros2 service call /get_entity_state gazebo_msgs/srv/GetEntityState "{name: 'tiago::wrist_ft_link', reference_frame: 'green_cube_3::link'}"
 requester: making request: gazebo_msgs.srv.GetEntityState_Request(name='tiago::wrist_ft_link', reference_frame='green_cube_3::link')
 
@@ -246,8 +279,10 @@ response:
 gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1809, nanosec=258000000), frame_id='green_cube_3::link'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.005071250542391959, y=-0.001078510009209965, z=0.232017062226551), orientation=geometry_msgs.msg.Quaternion(x=0.997776211667235, y=-0.06661632963077202, z=-0.0019340518557168878, w=0.0010749422891682054)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-0.0009333835761639284, y=0.0022413252256606783, z=-0.02600894296413523), angular=geometry_msgs.msg.Vector3(x=0.0024435304333426766, y=-0.0014682882225467188, z=-0.0026977951713324914)), reference_frame=''), success=True)
 
 ```
+
 ## E wzgledem O (T_EO = T_EF ∘ T_FO)
-``` bash
+
+```bash
 ros2 run tf2_ros tf2_echo arm_tool_link wrist_ft_link
 [INFO] [1761864215.141386840] [tf2_echo]: Waiting for transform arm_tool_link ->  wrist_ft_link: Invalid frame ID "arm_tool_link" passed to canTransform argument target_frame - frame does not exist
 At time 0.0
@@ -263,7 +298,8 @@ At time 0.0
 ```
 
 ## F wzgledem B
-``` bash
+
+```bash
 ros2 service call /get_entity_state gazebo_msgs/srv/GetEntityState "{name: 'tiago::wrist_ft_link', reference_frame: 'tiago::base_footprint'}"
 waiting for service to become available...
 requester: making request: gazebo_msgs.srv.GetEntityState_Request(name='tiago::wrist_ft_link', reference_frame='tiago::base_footprint')
@@ -273,7 +309,8 @@ gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin
 ```
 
 ## O względem B
-``` bash
+
+```bash
 ros2 service call /get_entity_state gazebo_msgs/srv/GetEntityState "{name: 'green_cube_3::link', reference_frame: 'tiago::base_footprint'}"
 waiting for service to become available...
 requester: making request: gazebo_msgs.srv.GetEntityState_Request(name='green_cube_3::link', reference_frame='tiago::base_footprint')
@@ -282,12 +319,13 @@ response:
 gazebo_msgs.srv.GetEntityState_Response(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=2006, nanosec=862000000), frame_id='tiago::base_footprint'), state=gazebo_msgs.msg.EntityState(name='', pose=geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.38836927153429057, y=-0.09756135619150655, z=0.5548355697949557), orientation=geometry_msgs.msg.Quaternion(x=-5.262173338224914e-06, y=-0.00024179374027266792, z=-4.852887181252426e-06, w=0.9999999707422726)), twist=geometry_msgs.msg.Twist(linear=geometry_msgs.msg.Vector3(x=-7.003816584000018e-05, y=2.1610094366687647e-07, z=0.011758353089382514), angular=geometry_msgs.msg.Vector3(x=6.192646530910378e-05, y=0.00040694896052922866, z=-8.816560441352007e-09)), reference_frame=''), success=True)
 ```
 
-# Zadanie 7 - nie wykonane jako że 0 pkt za nie
+# Zadanie 7 - nie wykonano, ponieważ nie jest ono punktowane.
 
 # Zadanie 8
+
 stworzono skrypt `one_grasp.cpp`. Skonfigurowano Rviz, zgodnie z tutorialem do którego link był w slajdach z wykładu. Otrzymano i wyświetlono pozycje kostki, która została manualnie sprawdzona w gazebo
 
-``` bash
+```bash
 ros2 run hello_moveit one_grasp --ros-args -p group:=arm_torso -p object:=green_cube_3 -p reference_frame:=tiago::base_footprint -p rviz_frame:=base_footprint -p use_sim_time:=true
 [INFO] [1761905904.180772681] [moveit_rdf_loader.rdf_loader]: Loaded robot model in 1968.43 seconds
 [INFO] [1761905904.180925796] [moveit_robot_model.robot_model]: Loading robot model 'tiago'...
@@ -300,15 +338,16 @@ ros2 run hello_moveit one_grasp --ros-args -p group:=arm_torso -p object:=green_
 [INFO] [1761905904.384077222] [one_grasp]: Object '' in 'tiago::base_footprint': pos [0.388 -0.098 0.555], quat [-0.000 -0.000 -0.000 1.000]
 ```
 
-_uwaga_: _parametr `use_sim_time` okazał się tutaj kluczowy, bez niego w rviz errory zwiazane z czase i tf_
+_uwaga_: _parametr `use_sim_time` okazał się tutaj kluczowy, bez niego w rviz wyrzucał errory zwiazane z czasem i tf_
 
 ![alt text](photos\zad8.png)
 
 # zadanie 9 i 10
-zadania 9 i 10 zrobiono jednocześnie, jako że obejmowały podobny zakres.
+
+Zadania 9 i 10 zrobiono jednocześnie, jako że obejmowały podobny zakres.
 zmodyfikowano skrypt `one_grasp.cpp` aby spełniał założenia, i uruchomiono go:
 
-``` bash
+```bash
 ros2 run hello_moveit one_grasp --ros-args \
   -p group:=arm_torso \
   -p object:=green_cube_3 \
@@ -333,9 +372,10 @@ ros2 run hello_moveit one_grasp --ros-args \
 ![alt text](photos\zad9_10.png)
 
 # zadanie 11 i 12
+
 zmodyfikowano skrypt `one_grasp.cpp` aby wykonywał zalecone czynności. Przebieg ich przedstawiono na zdjeciach
 
-``` bash
+```bash
 ros2 run hello_moveit one_grasp --ros-args \
   -p group:=arm_torso \
   -p reference_frame:=tiago::base_footprint \
