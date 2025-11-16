@@ -373,7 +373,14 @@ ros2 run hello_moveit one_grasp --ros-args \
 
 # zadanie 11 i 12
 
-zmodyfikowano skrypt `one_grasp.cpp` aby wykonywał zalecone czynności. Przebieg ich przedstawiono na zdjeciach
+Zmodyfikowano skrypt `one_grasp.cpp` aby wykonywał zalecone czynności tzn.:
+ - ruch nad stolik z omijaniem przeszkód. 
+ - ruch do pozycji przed wykonaniem chwytu
+ - ruch do pozycji chwytu
+ - zaciśnięcie szczęk chwytaka
+ - podniesienie obiektu 5 cm nad powierzchnię stołu.
+
+ Ich przebieg przedstawiono na poniższych zdjeciach:
 
 ```bash
 ros2 run hello_moveit one_grasp --ros-args \
