@@ -8,3 +8,5 @@ cd ..
 # source tiago/install/setup.bash # to też
 colcon build --symlink-install
 source install/setup.bash
+
+echo "source ~/stero/install/setup.bash" >> ~/.bashrc
