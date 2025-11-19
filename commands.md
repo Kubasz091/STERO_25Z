@@ -29,7 +29,7 @@ ros2 launch hello_moveit  tiago_gazebo.launch.py navigation:=True moveit:=True i
 
 # ubijanie gazebo
 ``` bash
-ps-A | grep gz
+ps -A | grep gz
 
 kill-9 <id_procesu>
 ```
