@@ -11,6 +11,7 @@ colcon build --symlink-install
 echo "source /opt/ros/iron/setup.bash" >> ~/.bashrc
 echo "source ~/stero/install/setup.bash" >> ~/.bashrc
 echo "export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" >> ~/.bashrc
+echo "source ~/tiago/install/setup.bash" >> ~/.bashrc
 echo "alias cb='colcon build --symlink-install'" >> ~/.bashrc
 echo "alias cbp='colcon build --symlink-install --packages-select'" >> ~/.bashrc
 echo "alias sb='source install/setup.bash'" >> ~/.bashrc
