@@ -98,7 +98,7 @@ public:
     };
     Eigen::Isometry3d T_BT = Eigen::Isometry3d::Identity();
     if (auto p = get_entity_pose(table_entity_)) {
-      T_BT.translation() = Eigen::Vector3d(p->position.x, p->position.y, p->position.z);
+      T_BT.translation() = Eigen::Vector3d(p->position.x, p->position.y, p->position.z+0.5); // podniesienie os 25 cm
       Eigen::Quaterniond q(p->orientation.w, p->orientation.x, p->orientation.y, p->orientation.z);
       T_BT.linear() = q.normalized().toRotationMatrix();
     }
@@ -223,7 +223,7 @@ private:
       ok = plan_exec_pose(arm, e_link, rviz_frame_, T_B_place, "Move to place position");
       rclcpp::sleep_for(300ms);
       Eigen::Isometry3d T_B_place_lower = T_B_place;
-      T_B_place_lower.translation().z() = T_BE.translation().z();
+      T_B_place_lower.translation().z() = T_BE.translation().z() + 0.01;
 
       RCLCPP_INFO(get_logger(), "Lowering to Z: %.3f (Grasp Z: %.3f)", T_B_place_lower.translation().z(), T_BE.translation().z());
 
