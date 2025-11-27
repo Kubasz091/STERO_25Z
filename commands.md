@@ -6,6 +6,7 @@ export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 # Sourcowanie
 ``` bash
 source /opt/ros/iron/setup.bash
+source /opt/ai_lab/tiago_public_ws/install/setup.bash
 source ~/tiago/install/setup.bash
 ```
 
