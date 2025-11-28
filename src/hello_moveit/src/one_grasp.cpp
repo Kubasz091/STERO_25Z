@@ -61,8 +61,8 @@ public:
     moveit::planning_interface::MoveGroupInterface arm(shared_from_this(), group_);
     const std::string e_link = arm.getEndEffectorLink();
     arm.setEndEffectorLink(e_link);
-    arm.setMaxVelocityScalingFactor(0.4);
-    arm.setMaxAccelerationScalingFactor(0.4);
+    arm.setMaxVelocityScalingFactor(0.8);
+    arm.setMaxAccelerationScalingFactor(0.8);
 
     moveit::planning_interface::MoveGroupInterface gripper(shared_from_this(), gripper_group_);
     gripper.setMaxVelocityScalingFactor(1.0);
@@ -103,10 +103,7 @@ public:
     // zad 8
     auto p_obj = call_get_pose(object_);
     if (!p_obj) return;
-    RCLCPP_INFO(get_logger(), "Object '%s' in '%s': pos [%.3f %.3f %.3f], quat [%.3f %.3f %.3f %.3f]",
-                object_.c_str(), ref_gz_.c_str(),
-                p_obj->position.x, p_obj->position.y, p_obj->position.z,
-                p_obj->orientation.x, p_obj->orientation.y, p_obj->orientation.z, p_obj->orientation.w);
+    RCLCPP_INFO(get_logger(), "Object '%s' found.", object_.c_str());
 
     Eigen::Isometry3d T_BO = Eigen::Isometry3d::Identity();
     T_BO.translation() = Eigen::Vector3d(p_obj->position.x, p_obj->position.y, p_obj->position.z);
@@ -117,7 +114,7 @@ public:
     T_OF.translation() = Eigen::Vector3d(of_px_, of_py_, of_pz_);
     T_OF.linear() = quat_to_rot(of_qx_, of_qy_, of_qz_, of_qw_);
 
-    rclcpp::sleep_for(300ms);
+    rclcpp::sleep_for(1s);
     Eigen::Isometry3d T_FE = Eigen::Isometry3d::Identity();
     try {
       auto tf = tf_buffer_.lookupTransform(f_link_, e_link, tf2::TimePointZero, 2s);
@@ -136,11 +133,8 @@ public:
     Eigen::Isometry3d T_BE_pre = T_BE * T_E_pre;
 
     mvt.publishAxis(T_BO, 0.12);
-    mvt.publishText(T_BO, "O(object)", rviz_visual_tools::GREEN, rviz_visual_tools::LARGE, false);
     mvt.publishAxis(T_BE, 0.12);
-    mvt.publishText(T_BE, "E_grasp", rviz_visual_tools::BLUE, rviz_visual_tools::LARGE, false);
     mvt.publishAxis(T_BE_pre, 0.12);
-    mvt.publishText(T_BE_pre, "E_pregrasp", rviz_visual_tools::CYAN, rviz_visual_tools::LARGE, false);
     mvt.trigger();
 
     // obstacles
@@ -171,12 +165,12 @@ public:
     cos.push_back(make_box("table_top", table_size_x_, table_size_y_, table_size_z_ + above_table_clearance_, T_BT));
     cos.push_back(make_box(object_, cube_size_, cube_size_, cube_size_, T_BO));
     psi.applyCollisionObjects(cos);
-    rclcpp::sleep_for(300ms);
+    rclcpp::sleep_for(1s);
 
     // reach
     const double d = std::hypot(T_BO.translation().x(), T_BO.translation().y());
     if (d > max_reach_) {
-      RCLCPP_ERROR(get_logger(), "Object too far (%.2f > %.2f)", d, max_reach_);
+      RCLCPP_ERROR(get_logger(), "Object too far");
       return;
     }
 
@@ -185,21 +179,46 @@ public:
       std::map<std::string,double> j; j[torso_joint_] = torso_up_;
       (void)plan_exec_joints(arm, j, "Raise torso");
     }
+    rclcpp::sleep_for(1s);
+
     {
       std::map<std::string,double> j; j[arm1_joint_] = arm1_angle_;
       (void)plan_exec_joints(arm, j, "Rotate arm_1");
     }
+    rclcpp::sleep_for(1s);
+
     (void)set_gripper_width(gripper, open_width_, "Open gripper");
+    rclcpp::sleep_for(1s);
 
     // zad 11
     bool ok = true;
+
+
+    arm.setStartStateToCurrentState();
     ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE_pre, "Pregrasp");
-    ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE, "Grasp pose");
-    ok = ok && set_gripper_width(gripper, close_width_, "Close gripper");
-    rclcpp::sleep_for(300ms);
-    Eigen::Isometry3d T_BE_lift = T_BE; T_BE_lift.translation().z() += lift_height_;
-    ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE_lift, "Lift");
+    rclcpp::sleep_for(1s);
+
+    if (ok) {
+        arm.setStartStateToCurrentState();
+        ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE, "Grasp pose");
+        rclcpp::sleep_for(1s);
+    }
+
+    if (ok) {
+        ok = ok && set_gripper_width(gripper, close_width_, "Close gripper");
+        rclcpp::sleep_for(1s);
+    }
+
+    if (ok) {
+        rclcpp::sleep_for(300ms);
+        Eigen::Isometry3d T_BE_lift = T_BE; T_BE_lift.translation().z() += lift_height_;
+
+        arm.setStartStateToCurrentState();
+        ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE_lift, "Lift");
+    }
+
     if (ok) RCLCPP_INFO(get_logger(), "Done.");
+    else RCLCPP_ERROR(get_logger(), "Sequence failed.");
   }
 
 private:
@@ -221,7 +240,6 @@ private:
     ps.pose.position.z = T.translation().z();
     ps.pose.orientation.x = q.x(); ps.pose.orientation.y = q.y(); ps.pose.orientation.z = q.z(); ps.pose.orientation.w = q.w();
     mgi.setPoseTarget(ps, ee_link);
-    mgi.setStartStateToCurrentState();
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     bool ok = (mgi.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS);
     if (ok) ok = (mgi.execute(plan) == moveit::core::MoveItErrorCode::SUCCESS);
@@ -266,10 +284,13 @@ private:
 int main(int argc, char * argv[]) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<OneGraspNode>();
-  rclcpp::executors::SingleThreadedExecutor exec;
+
+  rclcpp::executors::MultiThreadedExecutor exec;
   exec.add_node(node);
   std::thread spinner([&](){ exec.spin(); });
+
   node->run();
+
   rclcpp::shutdown();
   spinner.join();
   return 0;

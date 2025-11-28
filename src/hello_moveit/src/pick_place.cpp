@@ -24,7 +24,6 @@ public:
   explicit PickPlace(const rclcpp::NodeOptions & options = rclcpp::NodeOptions()) : rclcpp::Node("pick_place", options),
     tf_buffer_(this->get_clock()),
     tf_listener_(tf_buffer_) {
-    // parameters
     group_ = declare_parameter<std::string>("group", "arm");
     object_ = declare_parameter<std::string>("object", "green_cube_3");
     ref_gz_ = declare_parameter<std::string>("reference_frame", "tiago::base_footprint");
@@ -57,16 +56,18 @@ public:
     max_reach_ = declare_parameter<double>("max_reach", 1.2);
     place_x_ = declare_parameter<std::vector<double>>("place_x", {0.6, 0.5, 0.5, 2.0});
     place_y_ = declare_parameter<std::vector<double>>("place_y", {0.0, 0.2, -0.2, 0.0});
-    
+
     client_ = this->create_client<gazebo_msgs::srv::GetEntityState>("/get_entity_state");
   }
 
   void run() {
+    rclcpp::sleep_for(2s);
+
     moveit::planning_interface::MoveGroupInterface arm(shared_from_this(), group_);
     const std::string e_link = arm.getEndEffectorLink();
     arm.setEndEffectorLink(e_link);
-    arm.setMaxVelocityScalingFactor(0.4);
-    arm.setMaxAccelerationScalingFactor(0.4);
+    arm.setMaxVelocityScalingFactor(0.8);
+    arm.setMaxAccelerationScalingFactor(0.8);
 
     moveit::planning_interface::MoveGroupInterface gripper(shared_from_this(), gripper_group_);
     gripper.setMaxVelocityScalingFactor(1.0);
@@ -98,12 +99,11 @@ public:
     };
     Eigen::Isometry3d T_BT = Eigen::Isometry3d::Identity();
     if (auto p = get_entity_pose(table_entity_)) {
-      T_BT.translation() = Eigen::Vector3d(p->position.x, p->position.y, p->position.z+0.5); // podniesienie os 25 cm
+      T_BT.translation() = Eigen::Vector3d(p->position.x, p->position.y, p->position.z+0.5); // podniesienie os 50 cm
       Eigen::Quaterniond q(p->orientation.w, p->orientation.x, p->orientation.y, p->orientation.z);
       T_BT.linear() = q.normalized().toRotationMatrix();
     }
-    
-    // Initial object pose for collision object
+
     Eigen::Isometry3d T_BO_init = Eigen::Isometry3d::Identity();
     if (auto p_obj = get_entity_pose(object_)) {
         T_BO_init.translation() = Eigen::Vector3d(p_obj->position.x, p_obj->position.y, p_obj->position.z);
@@ -114,21 +114,25 @@ public:
     cos.push_back(make_box("table_top", table_size_x_, table_size_y_, table_size_z_, T_BT));
     cos.push_back(make_box(object_, cube_size_, cube_size_, cube_size_, T_BO_init));
     psi.applyCollisionObjects(cos);
-    rclcpp::sleep_for(300ms);
+    rclcpp::sleep_for(1s);
 
-    // zad 12
     {
       std::map<std::string,double> j; j[torso_joint_] = torso_up_;
       (void)plan_exec_joints(arm, j, "Raise torso");
     }
+    rclcpp::sleep_for(1s);
+
     {
       std::map<std::string,double> j; j[arm1_joint_] = arm1_angle_;
       (void)plan_exec_joints(arm, j, "Rotate arm_1");
     }
-    (void)set_gripper_width(gripper, open_width_, "Open gripper");
+    rclcpp::sleep_for(1s);
 
-    // Loop through place coordinates
+    (void)set_gripper_width(gripper, open_width_, "Open gripper");
+    rclcpp::sleep_for(1s);
+
     size_t n_places = std::min(place_x_.size(), place_y_.size());
+
     for (size_t i = 0; i < n_places; ++i) {
       RCLCPP_INFO(get_logger(), "Starting pick and place sequence %zu/%zu", i + 1, n_places);
       bool ok = pick_and_place(arm, gripper, mvt, place_x_[i], place_y_[i]);
@@ -136,15 +140,14 @@ public:
         RCLCPP_ERROR(get_logger(), "Pick and place sequence %zu failed", i + 1);
         break;
       }
-      rclcpp::sleep_for(1s); // Wait a bit between sequences
+      rclcpp::sleep_for(1s);
     }
-    
+
     RCLCPP_INFO(get_logger(), "All sequences completed.");
   }
 
 
 private:
-  // helpers
   bool pick_and_place(moveit::planning_interface::MoveGroupInterface & arm,
                       moveit::planning_interface::MoveGroupInterface & gripper,
                       moveit_visual_tools::MoveItVisualTools & mvt,
@@ -153,7 +156,6 @@ private:
     std::string e_link = arm.getEndEffectorLink();
     bool ok = true;
 
-    // Calculate poses
     auto p_obj = get_entity_pose(object_);
     if (!p_obj) {
         RCLCPP_ERROR(get_logger(), "Could not get pose for object %s", object_.c_str());
@@ -186,7 +188,6 @@ private:
     T_E_pre.translation() = Eigen::Vector3d(-approach_distance_, 0.0, 0.0);
     Eigen::Isometry3d T_BE_pre = T_BE * T_E_pre;
 
-    // Visualize
     mvt.publishAxis(T_BO, 0.12);
     mvt.publishText(T_BO, "O(object)", rviz_visual_tools::GREEN, rviz_visual_tools::LARGE, false);
     mvt.publishAxis(T_BE, 0.12);
@@ -195,22 +196,36 @@ private:
     mvt.publishText(T_BE_pre, "E_pregrasp", rviz_visual_tools::CYAN, rviz_visual_tools::LARGE, false);
     mvt.trigger();
 
-    // Check reach
     if (!check_reach(T_BO.translation().x(), T_BO.translation().y(), "Object")) return false;
 
-    // Pick
+    arm.setStartStateToCurrentState();
     ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE_pre, "Pregrasp");
-    ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE, "Grasp pose");
-    ok = ok && set_gripper_width(gripper, close_width_, "Close gripper");
+    rclcpp::sleep_for(1s);
+
+    if (ok) {
+      arm.setStartStateToCurrentState();
+      ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE, "Grasp pose");
+      rclcpp::sleep_for(1s);
+    }
+
+    if (ok) {
+        ok = ok && set_gripper_width(gripper, close_width_, "Close gripper");
+        rclcpp::sleep_for(1s);
+    }
+
     if (ok) {
       arm.attachObject(object_, e_link, gripper.getLinkNames());
       RCLCPP_INFO(get_logger(), "Object attached");
     }
     rclcpp::sleep_for(300ms);
     Eigen::Isometry3d T_BE_lift = T_BE; T_BE_lift.translation().z() += lift_height_;
-    ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE_lift, "Lift");
 
-    // Place
+    if (ok) {
+      arm.setStartStateToCurrentState();
+      ok = ok && plan_exec_pose(arm, e_link, rviz_frame_, T_BE_lift, "Lift");
+      rclcpp::sleep_for(1s);
+    }
+
     if (!check_reach(place_x, place_y, "Place point")) return false;
 
     if (ok) {
@@ -220,20 +235,24 @@ private:
 
       RCLCPP_INFO(get_logger(), "Placing at: [%.3f, %.3f, %.3f]", place_x, place_y, T_BE.translation().z());
 
+      arm.setStartStateToCurrentState();
       ok = plan_exec_pose(arm, e_link, rviz_frame_, T_B_place, "Move to place position");
-      rclcpp::sleep_for(300ms);
+      rclcpp::sleep_for(1s);
+
       Eigen::Isometry3d T_B_place_lower = T_B_place;
       T_B_place_lower.translation().z() = T_BE.translation().z() + 0.01;
 
       RCLCPP_INFO(get_logger(), "Lowering to Z: %.3f (Grasp Z: %.3f)", T_B_place_lower.translation().z(), T_BE.translation().z());
 
       if (ok) {
+        arm.setStartStateToCurrentState();
         ok = plan_exec_pose(arm, e_link, rviz_frame_, T_B_place_lower, "Lower to place");
+        rclcpp::sleep_for(1s);
       }
 
       if (ok) {
         ok = set_gripper_width(gripper, open_width_, "Release object");
-        rclcpp::sleep_for(300ms);
+        rclcpp::sleep_for(1s);
       }
 
       if (ok) {
@@ -243,7 +262,9 @@ private:
 
       if (ok) {
         Eigen::Isometry3d T_B_retreat = T_B_place; T_B_retreat.translation().z() = T_BE_pre.translation().z();
+        arm.setStartStateToCurrentState();
         ok = plan_exec_pose(arm, e_link, rviz_frame_, T_B_retreat, "Retreat from place");
+        rclcpp::sleep_for(1s);
       }
     }
     return ok;
@@ -305,7 +326,6 @@ private:
     return plan_exec_joints(gr, j, label);
   }
 
-  // parameters
   std::string group_, object_, ref_gz_, rviz_frame_, table_entity_, f_link_, gripper_group_;
   double table_size_x_{}, table_size_y_{}, table_size_z_{}, cube_size_{}, above_table_clearance_{};
   double of_px_{}, of_py_{}, of_pz_{}, of_qx_{}, of_qy_{}, of_qz_{}, of_qw_{};
@@ -313,7 +333,6 @@ private:
   std::vector<double> place_x_, place_y_;
   std::string finger_left_joint_, finger_right_joint_, torso_joint_, arm1_joint_;
 
-  // tf
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
   rclcpp::Client<gazebo_msgs::srv::GetEntityState>::SharedPtr client_;
@@ -346,7 +365,7 @@ private:
 int main(int argc, char * argv[]) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<PickPlace>();
-  rclcpp::executors::SingleThreadedExecutor exec;
+  rclcpp::executors::MultiThreadedExecutor exec;
   exec.add_node(node);
   std::thread spinner([&](){ exec.spin(); });
   node->run();

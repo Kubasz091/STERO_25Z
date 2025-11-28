@@ -1,5 +1,4 @@
 #include <memory>
-
 #include <thread>
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
@@ -15,10 +14,10 @@ int main(int argc, char* argv[])
   // Create a ROS logger
   auto const logger = rclcpp::get_logger("hello_moveit");
 
-  // Spin up a SingleThreadedExecutor for MoveItVisualTools to interact with ROS
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(node);
-  auto spinner = std::thread([&executor]() { executor.spin(); });
+
+  auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
+  executor->add_node(node);
+  std::thread([executor]() { executor->spin(); }).detach();
 
   // Create the MoveIt MoveGroup Interface
   using moveit::planning_interface::MoveGroupInterface;
@@ -55,42 +54,39 @@ int main(int argc, char* argv[])
   auto const target_pose = []{
     geometry_msgs::msg::Pose msg;
     msg.orientation.x = 0.697;
-     msg.orientation.y = 0.031;
-      msg.orientation.z = 0.716;
-       msg.orientation.w = -0.004;
-         msg.position.x = 0.20;
-          msg.position.y = 0.18;
-          msg.position.z = 0.64;
-           return msg;   }();
+    msg.orientation.y = 0.031;
+    msg.orientation.z = 0.716;
+    msg.orientation.w = -0.004;
+    msg.position.x = 0.20;
+    msg.position.y = 0.18;
+    msg.position.z = 0.64;
+    return msg;
+  }();
   move_group_interface.setPoseTarget(target_pose);
 
   // Create a plan to that target pose
   prompt("Press 'Next' in the RvizVisualToolsGui window to plan");
   draw_title("Planning");
   moveit_visual_tools.trigger();
-  auto const [success, plan] = [&move_group_interface] {
-    moveit::planning_interface::MoveGroupInterface::Plan msg;
-    auto const ok = static_cast<bool>(move_group_interface.plan(msg));
-    return std::make_pair(ok, msg);
-  }();
+
+  moveit::planning_interface::MoveGroupInterface::Plan msg;
+  auto const ok = static_cast<bool>(move_group_interface.plan(msg));
 
   // Execute the plan
-  if (success) {
-    draw_trajectory_tool_path(plan.trajectory);
+  if (ok) {
+    draw_trajectory_tool_path(msg.trajectory);
     moveit_visual_tools.trigger();
     prompt("Press 'Next' in the RvizVisualToolsGui window to execute");
     draw_title("Executing");
     moveit_visual_tools.trigger();
-    move_group_interface.execute(plan);
+    move_group_interface.execute(msg);
   } else {
     draw_title("Planning Failed!");
     moveit_visual_tools.trigger();
     RCLCPP_ERROR(logger, "Planning failed!");
   }
 
-
   // Shutdown ROS
   rclcpp::shutdown();
-  spinner.join();
   return 0;
 }
