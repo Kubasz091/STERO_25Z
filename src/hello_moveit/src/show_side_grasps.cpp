@@ -2,38 +2,45 @@
 #include <thread>
 #include <chrono>
 #include <optional>
-#include <map>
-#include <sstream>
-#include <iomanip>
-#include <vector>
 #include <cmath>
+#include <mutex>
+#include <atomic>
 #include <Eigen/Geometry>
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 #include <moveit_msgs/msg/grasp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
-#include <moveit_msgs/msg/collision_object.hpp>
-#include <shape_msgs/msg/solid_primitive.hpp>
 #include <gazebo_msgs/srv/get_entity_state.hpp>
 
 using namespace std::chrono_literals;
 
+struct GraspVizData {
+    bool initialized = false;
+    bool needs_update = false;
+
+    int id = 0;
+    Eigen::Isometry3d T_BE;
+    Eigen::Isometry3d T_BE_pre;
+    Eigen::Isometry3d T_BO;
+    moveit_msgs::msg::Grasp grasp_msg;
+};
+
 class ShowSideGraspsNode : public rclcpp::Node {
 public:
-  explicit ShowSideGraspsNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions()) : rclcpp::Node("show_side_grasps", options),
-    tf_buffer_(this->get_clock()),
-    tf_listener_(tf_buffer_) {
-    // parameters
+  explicit ShowSideGraspsNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
+    : rclcpp::Node("show_side_grasps", options),
+      tf_buffer_(this->get_clock()),
+      tf_listener_(tf_buffer_) {
+
     group_ = declare_parameter<std::string>("group", "arm");
     object_ = declare_parameter<std::string>("object", "green_cube_3");
     ref_gz_ = declare_parameter<std::string>("reference_frame", "tiago::base_footprint");
     rviz_frame_ = declare_parameter<std::string>("rviz_frame", "base_footprint");
-    
-    // Grasp parameters (T_OF)
+
     of_px_ = declare_parameter<double>("of_px", 0.005071250542391959);
     of_py_ = declare_parameter<double>("of_py", -0.001078510009209965);
     of_pz_ = declare_parameter<double>("of_pz", 0.232017062226551);
@@ -41,69 +48,69 @@ public:
     of_qy_ = declare_parameter<double>("of_qy", -0.06661632963077202);
     of_qz_ = declare_parameter<double>("of_qz", -0.0019340518557168878);
     of_qw_ = declare_parameter<double>("of_qw", 0.0010749422891682054);
-    
+
     approach_distance_ = declare_parameter<double>("approach_distance", 0.10);
     gripper_group_ = declare_parameter<std::string>("gripper_group", "gripper");
-
     f_link_ = declare_parameter<std::string>("f_link", "wrist_ft_link");
+
+    viz_rate_ = declare_parameter<double>("viz_rate", 20.0);
+
+    client_ = this->create_client<gazebo_msgs::srv::GetEntityState>("/get_entity_state");
   }
 
   void run() {
-    moveit::planning_interface::MoveGroupInterface arm(shared_from_this(), group_);
-    const std::string e_link = arm.getEndEffectorLink();
-    
-    moveit_visual_tools::MoveItVisualTools mvt(shared_from_this(), rviz_frame_,
-                                               rviz_visual_tools::RVIZ_MARKER_TOPIC,
-                                               arm.getRobotModel());
-    mvt.deleteAllMarkers();
-    mvt.loadRemoteControl();
+    rclcpp::sleep_for(1s);
 
-    // Get object pose
-    using GetEntityState = gazebo_msgs::srv::GetEntityState;
-    auto client = this->create_client<GetEntityState>("/get_entity_state");
-    while (!client->wait_for_service(1s)) {
+    moveit::planning_interface::MoveGroupInterface arm(shared_from_this(), group_);
+
+    mvt_ = std::make_shared<moveit_visual_tools::MoveItVisualTools>(
+        shared_from_this(), rviz_frame_, rviz_visual_tools::RVIZ_MARKER_TOPIC, arm.getRobotModel());
+
+    mvt_->deleteAllMarkers();
+    mvt_->loadRemoteControl();
+
+    const moveit::core::JointModelGroup* gripper_jmg = arm.getRobotModel()->getJointModelGroup(gripper_group_);
+
+    viz_running_ = true;
+    std::thread viz_thread([this, gripper_jmg](){ this->visualization_loop(gripper_jmg); });
+
+    while (!client_->wait_for_service(1s)) {
       if (!rclcpp::ok()) return;
     }
-    
-    auto call_get_pose = [&](const std::string & name)->std::optional<geometry_msgs::msg::Pose> {
-      auto req = std::make_shared<GetEntityState::Request>();
-      req->name = name;
-      req->reference_frame = ref_gz_;
-      auto fut = client->async_send_request(req);
-      if (fut.wait_for(3s) == std::future_status::ready) {
-        auto r = fut.get();
-        if (r->success) return r->state.pose;
-      }
-      if (name.rfind("::link") == std::string::npos) {
-        req->name = name + "::link";
-        auto fut2 = client->async_send_request(req);
-        if (fut2.wait_for(2s) == std::future_status::ready) {
-          auto r2 = fut2.get();
-          if (r2->success) return r2->state.pose;
+
+    auto get_pose = [&](const std::string & name) -> std::optional<geometry_msgs::msg::Pose> {
+        auto req = std::make_shared<gazebo_msgs::srv::GetEntityState::Request>();
+        req->name = name;
+        req->reference_frame = ref_gz_;
+        auto fut = client_->async_send_request(req);
+        if (fut.wait_for(2s) == std::future_status::ready) {
+            auto res = fut.get();
+            if (res->success) return res->state.pose;
         }
-      }
-      return std::nullopt;
+        if (name.rfind("::link") == std::string::npos) {
+            req->name = name + "::link";
+            auto fut2 = client_->async_send_request(req);
+            if (fut2.wait_for(2s) == std::future_status::ready) {
+                auto res2 = fut2.get();
+                if (res2->success) return res2->state.pose;
+            }
+        }
+        return std::nullopt;
     };
 
-    auto p_obj = call_get_pose(object_);
-    if (!p_obj) {
-        RCLCPP_ERROR(get_logger(), "Could not get object pose for %s", object_.c_str());
-        return;
-    }
-    RCLCPP_INFO(get_logger(), "Object '%s' pose found.", object_.c_str());
+    auto p_obj = get_pose(object_);
+    if (!p_obj) return;
 
     Eigen::Isometry3d T_BO = Eigen::Isometry3d::Identity();
     T_BO.translation() = Eigen::Vector3d(p_obj->position.x, p_obj->position.y, p_obj->position.z);
     T_BO.linear() = quat_to_rot(p_obj->orientation.x, p_obj->orientation.y, p_obj->orientation.z, p_obj->orientation.w);
 
-    // Base grasp T_OF
-    Eigen::Isometry3d T_OF = Eigen::Isometry3d::Identity();
-    T_OF.translation() = Eigen::Vector3d(of_px_, of_py_, of_pz_);
-    T_OF.linear() = quat_to_rot(of_qx_, of_qy_, of_qz_, of_qw_);
+    Eigen::Isometry3d T_OF_base = Eigen::Isometry3d::Identity();
+    T_OF_base.translation() = Eigen::Vector3d(of_px_, of_py_, of_pz_);
+    T_OF_base.linear() = quat_to_rot(of_qx_, of_qy_, of_qz_, of_qw_);
 
-    // T_FE
-    rclcpp::sleep_for(300ms);
     Eigen::Isometry3d T_FE = Eigen::Isometry3d::Identity();
+    const std::string e_link = arm.getEndEffectorLink();
     try {
       auto tf = tf_buffer_.lookupTransform(f_link_, e_link, tf2::TimePointZero, 2s);
       T_FE.translation() = Eigen::Vector3d(tf.transform.translation.x, tf.transform.translation.y, tf.transform.translation.z);
@@ -113,127 +120,119 @@ public:
       T_FE.linear() = quat_to_rot(0.5, 0.5, 0.5, 0.5);
     }
 
-    mvt.publishAxis(T_BO, 0.12);
-    mvt.publishText(T_BO, "O", rviz_visual_tools::GREEN, rviz_visual_tools::LARGE, false);
-
-    const moveit::core::JointModelGroup* gripper_jmg = arm.getRobotModel()->getJointModelGroup(gripper_group_);
-
-    auto eigToPose = [&](const Eigen::Isometry3d & T) {
-      geometry_msgs::msg::Pose p;
-      p.position.x = T.translation().x();
-      p.position.y = T.translation().y();
-      p.position.z = T.translation().z();
-      Eigen::Quaterniond q(T.rotation()); q.normalize();
-      p.orientation.x = q.x(); p.orientation.y = q.y(); p.orientation.z = q.z(); p.orientation.w = q.w();
-      return p;
-    };
-
-    // Generate 12 grasps
-    // 4 rotations around Z (0, 90, 180, 270)
-    // For each Z rotation, 3 rotations around Y (-30, 0, +30)
-    RCLCPP_INFO(get_logger(), "Generating 12 grasps (4 around Z * 3 around Y)...");
-    
     int grasp_idx = 0;
     for (int i_z = 0; i_z < 4; ++i_z) {
-        double angle_z_deg = i_z * 90.0;
-        double angle_z_rad = angle_z_deg * M_PI / 180.0;
-        
-        for (int i_y = -1; i_y <= 1; ++i_y) {
-            double angle_y_deg = i_y * 30.0;
-            double angle_y_rad = angle_y_deg * M_PI / 180.0;
+        double roll = i_z * (M_PI / 2.0);
 
-            mvt.deleteAllMarkers();
+        for (int i_y = 0; i_y < 3; ++i_y) {
+            double pitch = i_y * (M_PI / 6.0);
 
-            // Rotation around Z
-            Eigen::Isometry3d R_z = Eigen::Isometry3d::Identity();
-            R_z.linear() = Eigen::AngleAxisd(angle_z_rad, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+            Eigen::Isometry3d T_O_Ogr = Eigen::Isometry3d::Identity();
+            T_O_Ogr.linear() = (Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())).toRotationMatrix();
 
-            // Rotation around Y
-            Eigen::Isometry3d R_y = Eigen::Isometry3d::Identity();
-            R_y.linear() = Eigen::AngleAxisd(angle_y_rad, Eigen::Vector3d::UnitY()).toRotationMatrix();
+            Eigen::Isometry3d T_BE = T_BO * T_O_Ogr * T_OF_base * T_FE;
 
-            // Combined rotation: First rotate around Y (tilt), then around Z (orientation)
-            // Or depending on the frame definition. Usually we want to tilt relative to the current approach, then rotate around the object axis?
-            // The requirement says: "for each rotation around RZ by 90 degrees, additional two grasps tilted by +- 30 degrees in RY".
-            // Assuming we apply these rotations to the base grasp T_OF.
-            // Let's assume we rotate T_OF by R_z then R_y or R_y then R_z.
-            // If we rotate around Z first, we orient the gripper. Then we tilt it around Y (local or global?).
-            // Usually "tilt" means changing the approach angle relative to the face normal.
-            // Let's try: T_OF_new = T_OF * R_z * R_y
-            
-            Eigen::Isometry3d T_OF_new = T_OF * R_z * R_y;
-
-            // Calculate T_BE (Grasp Pose)
-            Eigen::Isometry3d T_BE = T_BO * T_OF_new * T_FE;
-
-            // Calculate T_BE_pre (Pre-grasp Pose)
             Eigen::Isometry3d T_E_pre = Eigen::Isometry3d::Identity();
             T_E_pre.translation() = Eigen::Vector3d(-approach_distance_, 0.0, 0.0);
             Eigen::Isometry3d T_BE_pre = T_BE * T_E_pre;
 
-            // 1) Model chwytaka (Gripper model)
-            moveit_msgs::msg::Grasp grasp;
-            grasp.grasp_pose.header.frame_id = rviz_frame_;
-            grasp.grasp_pose.pose = eigToPose(T_BE);
-            mvt.publishGrasps({grasp}, gripper_jmg);
+            {
+                std::lock_guard<std::mutex> lock(data_mutex_);
+                shared_data_.initialized = true;
+                shared_data_.needs_update = true;
 
-            // 2) Układ związany z chwytakiem – dla pozycji chwytu
-            mvt.publishAxis(T_BE, 0.1);
-            mvt.publishText(T_BE, "Grasp " + std::to_string(grasp_idx), rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+                shared_data_.id = grasp_idx + 1;
+                shared_data_.T_BE = T_BE;
+                shared_data_.T_BE_pre = T_BE_pre;
+                shared_data_.T_BO = T_BO;
 
-            // 3) Układ związany z chwytakiem – dla pozycji przed chwytem
-            mvt.publishAxis(T_BE_pre, 0.1);
-            mvt.publishText(T_BE_pre, "Pre-grasp", rviz_visual_tools::GREY, rviz_visual_tools::LARGE);
+                shared_data_.grasp_msg.grasp_pose.header.frame_id = rviz_frame_;
+                shared_data_.grasp_msg.grasp_pose.pose = tf2::toMsg(T_BE);
+            }
 
-            // 4) Układ związany z obiektem
-            mvt.publishAxis(T_BO, 0.12);
-            mvt.publishText(T_BO, "Object", rviz_visual_tools::GREEN, rviz_visual_tools::LARGE);
-            
-            // Log rotation
-            RCLCPP_INFO(get_logger(), "Grasp %d: Rot Z=%.0f deg, Rot Y=%.0f deg", 
-                grasp_idx, angle_z_deg, angle_y_deg);
+            RCLCPP_INFO(get_logger(), "Grasp %d: Roll=%.0f, Pitch=%.0f", grasp_idx + 1, roll * 180.0/M_PI, pitch * 180.0/M_PI);
 
-            mvt.trigger();
-
-            if (!mvt.prompt("Press 'Next' for next grasp, or 'Break' to stop")) {
-                goto end_loop;
+            if (!mvt_->prompt("Press 'Next'")) {
+                viz_running_ = false;
+                return;
             }
             grasp_idx++;
         }
     }
-    end_loop:
-    
-    RCLCPP_INFO(get_logger(), "Finished showing grasps.");
+    viz_running_ = false;
+
+    if (viz_thread.joinable()) {
+        viz_thread.join();
+    }
+
+    mvt_.reset();
+
+    RCLCPP_INFO(get_logger(), "Visualization thread joined. Exiting safely.");
   }
 
 private:
+  void visualization_loop(const moveit::core::JointModelGroup* jmg) {
+      GraspVizData local_data;
+      rclcpp::Rate rate(viz_rate_);
+
+      while (rclcpp::ok() && viz_running_) {
+          {
+              std::lock_guard<std::mutex> lock(data_mutex_);
+              if (shared_data_.needs_update) {
+                  local_data = shared_data_;
+                  shared_data_.needs_update = false;
+              }
+          }
+
+          if (local_data.initialized) {
+              mvt_->deleteAllMarkers();
+
+              mvt_->publishGrasps({local_data.grasp_msg}, jmg);
+              mvt_->publishAxisLabeled(local_data.T_BE, "Grasp" + std::to_string(local_data.id), rviz_visual_tools::MEDIUM);
+              mvt_->publishAxisLabeled(local_data.T_BE_pre, "Pre", rviz_visual_tools::SMALL);
+              mvt_->publishAxisLabeled(local_data.T_BO, "Object", rviz_visual_tools::MEDIUM);
+
+              mvt_->trigger();
+          }
+          rate.sleep();
+      }
+  }
+
   static Eigen::Matrix3d quat_to_rot(double x, double y, double z, double w) {
     Eigen::Quaterniond q(w, x, y, z);
     return q.normalized().toRotationMatrix();
   }
-  
+
   std::string group_, object_, ref_gz_, rviz_frame_, f_link_, gripper_group_;
   double of_px_, of_py_, of_pz_, of_qx_, of_qy_, of_qz_, of_qw_;
   double approach_distance_;
-  
+  double viz_rate_;
+
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
+  rclcpp::Client<gazebo_msgs::srv::GetEntityState>::SharedPtr client_;
+
+  std::shared_ptr<moveit_visual_tools::MoveItVisualTools> mvt_;
+
+  std::mutex data_mutex_;
+  GraspVizData shared_data_;
+  std::atomic<bool> viz_running_{false};
 };
 
 int main(int argc, char * argv[]) {
   rclcpp::init(argc, argv);
-  
-  // Force use_sim_time to true since this node depends on Gazebo
+
   rclcpp::NodeOptions options;
-  options.parameter_overrides({
-    {"use_sim_time", true}
-  });
-  
+  options.parameter_overrides({{"use_sim_time", true}});
+
   auto node = std::make_shared<ShowSideGraspsNode>(options);
-  rclcpp::executors::SingleThreadedExecutor exec;
+
+  rclcpp::executors::MultiThreadedExecutor exec;
   exec.add_node(node);
   std::thread spinner([&](){ exec.spin(); });
+
   node->run();
+
   rclcpp::shutdown();
   spinner.join();
   return 0;

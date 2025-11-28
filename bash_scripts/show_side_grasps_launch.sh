@@ -1,0 +1,1 @@
+ros2 run hello_moveit show_side_grasps --ros-args -p use_sim_time:=true -p viz_rate:=10.0
