@@ -29,10 +29,11 @@ size_t n_places = std::min(place_x_.size(), place_y_.size());
 
 for (size_t i = 0; i < n_places; ++i) {
     RCLCPP_INFO(get_logger(), "Starting pick and place sequence %zu/%zu", i + 1, n_places);
+
     bool ok = pick_and_place(arm, gripper, mvt, place_x_[i], place_y_[i]);
     if (!ok) {
-    RCLCPP_ERROR(get_logger(), "Pick and place sequence %zu failed", i + 1);
-    break;
+        RCLCPP_ERROR(get_logger(), "Pick and place sequence %zu failed", i + 1);
+        break;
     }
     rclcpp::sleep_for(1s);
 }
@@ -75,8 +76,9 @@ Przeprowadzono testy dla 4 różnych pozycji startowych obiektu `green_cube_3` (
     wywyływany przez opisaną w *zadaniu 2* funkcje `check_reach`.
 - robot wziął po uwagę stół (nie zderzył się z nim)
 - końcowy wynik działąnia programu można zobaczyć na tych zrzutach ekranu (pozycje 3 wykonań i pozycja końcowa - po błędzie)
-![alt text](rviz_zad3.png)
-![alt text](gazebo_zad3.png)
+
+|![alt text](photos/rviz_zad3.png) | ![alt text](photos/gazebo_zad3.png) |
+| --- | --- |
 
 ---
 
@@ -115,8 +117,6 @@ Aby uzyskać 12 chwytów dla jednej ścianki, macierz $\mathcal{T}_{O_{gr}}^{O}$
     * $RY(30^\circ)$
     * $RY(60^\circ)$
 
-Dzięki takiemu podejściu, chwytak zawsze "myśli", że wykonuje ten sam idealny chwyt, a my jedynie "obracamy światem" (obiektem) pod nim.
-
 ---
 
 ## Zadanie 5: Wizualizacja chwytów (`show_side_grasps`)
@@ -134,10 +134,86 @@ Dzięki takiemu podejściu, chwytak zawsze "myśli", że wykonuje ten sam idealn
 - W skrypcie dodano Node-a który publikuje markery z częstotliwościa określaną w parametrze `viz_rate`. Zrobiliśmy tak dlatego, że marker chwytaka znikał zaraz po opublikowaniu.
 
 **Wizualizacje:**
-| ![Grasp 1](zad5/chwyt1.png) | ![Grasp 2](zad5/chwyt2.png) | ![Grasp 3](zad5/chwyt3.png) |
+| ![Grasp 1](photos/zad5/chwyt1.png) | ![Grasp 2](photos/zad5/chwyt2.png) | ![Grasp 3](photos/zad5/chwyt3.png) |
 | --- | --- | --- |
-| ![Grasp 4](zad5/chwyt4.png) | ![Grasp 5](zad5/chwyt5.png) | ![Grasp 6](zad5/chwyt6.png) |
-| ![Grasp 7](zad5/chwyt7.png) | ![Grasp 8](zad5/chwyt8.png) | ![Grasp 9](zad5/chwyt9.png) |
-| ![Grasp 10](zad5/chwyt10.png) | ![Grasp 11](zad5/chwyt11.png) | ![Grasp 12](zad5/chwyt12.png) |
+| ![Grasp 4](photos/zad5/chwyt4.png) | ![Grasp 5](photos/zad5/chwyt5.png) | ![Grasp 6](photos/zad5/chwyt6.png) |
+| ![Grasp 7](photos/zad5/chwyt7.png) | ![Grasp 8](photos/zad5/chwyt8.png) | ![Grasp 9](photos/zad5/chwyt9.png) |
+| ![Grasp 10](photos/zad5/chwyt10.png) | ![Grasp 11](photos/zad5/chwyt11.png) | ![Grasp 12](photos/zad5/chwyt12.png) |
 
 ---
+
+## Zadanie 6: Generacja chwytów dla każdej ścianki obiektu green_cube_3
+
+Celem zadania było rozszerzenie algorytmu z Zadania 4 na cały obiekt, generując chwyty dla każdej z 6 ścianek sześcianu `green_cube_3`. Algorytm generuje łącznie **72 chwyty** ($6 \text{ ścian} \times 4 \text{ warianty obrotu} \times 3 \text{ warianty pochylenia}$).
+
+### Metodyka (Złożenie przekształceń)
+
+Podobnie jak w Zadaniu 4, wykorzystano symetrię sześcianu. Zamiast definiować osobne chwyty dla każdej ściany, manipulowano macierzą $\mathcal{T}_{O_{gr}}^{O}$, która teraz składa się z dwóch etapów rotacji: wyboru ścianki oraz lokalnego wariantu chwytu.
+
+Wzór na docelową pozycję końcówki pozostaje bez zmian:
+
+$$
+\mathcal{T}_{E,gr}^{B} = \mathcal{T}_{O}^{B} \cdot \mathcal{T}_{O_{gr}}^{O} \cdot \mathcal{T}_{A7,gr}^{O_{gr}} \cdot \mathcal{T}_{E}^{A7}
+$$
+
+Gdzie macierz wirtualnego układu $\mathcal{T}_{O_{gr}}^{O}$ jest teraz iloczynem rotacji ścianki i rotacji lokalnej:
+
+$$
+\mathcal{T}_{O_{gr}}^{O} = T_{face} \cdot T_{local}
+$$
+
+### 1. Rotacje ścianek ($T_{face}$)
+
+Aby pokryć cały obiekt, wirtualny układ obiektu jest obracany tak, aby oś Z (normalna ścianki) pokrywała się z osią Z chwytaka (podejścia) dla chwytu wzorcowego "od góry". Zdefiniowano następujące transformacje:
+
+* **Góra (Top):** Brak rotacji ($\mathcal{I}$).
+* **Dół (Bottom):** Obrót o $180^\circ$ wokół osi X ($Roll = \pi$).
+* **Przód (Front):** Obrót o $90^\circ$ wokół osi Y ($Pitch = -\pi/2$).
+* **Tył (Back):** Obrót o $-90^\circ$ wokół osi Y ($Pitch = \pi/2$).
+* **Prawo (Right):** Obrót o $90^\circ$ wokół osi X ($Roll = \pi/2$).
+* **Lewo (Left):** Obrót o $-90^\circ$ wokół osi X ($Roll = -\pi/2$).
+
+### 2. Warianty lokalne ($T_{local}$)
+
+Dla każdej ścianki generowany jest zestaw 12 chwytów poprzez iteracyjne składanie podstawowych obrotów, analogicznie do Zadania 4:
+
+1. **Obrót osi podejścia (Roll) - 4 warianty:**
+   Obrót wokół osi Z, zmieniający orientację szczęk chwytaka:
+   * $RZ(0^\circ)$
+   * $RZ(90^\circ)$
+   * $RZ(180^\circ)$
+   * $RZ(270^\circ)$
+
+2. **Pochylenie (Pitch) - 3 warianty:**
+   Obrót wokół osi Y, zmieniający kąt natarcia chwytaka:
+   * $RY(0^\circ)$
+   * $RY(30^\circ)$
+   * $RY(60^\circ)$
+
+## Zadanie 7
+Zaimplementowano wezeł `show_all_grasps` zgodny z powyższym opisem.
+
+Dodano do `show_side_grasps`:
+- Kalkulacje obrotów do każdej ze ścian `greec_cube_3`
+    ```cpp
+    std::vector<std::pair<std::string, Eigen::Isometry3d>> faces;
+    faces.push_back({"Top", Eigen::Isometry3d::Identity()}); // Top
+    faces.push_back({"Bottom", Eigen::Isometry3d(Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()))}); // Bottom
+    faces.push_back({"Front", Eigen::Isometry3d(Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitY()))}); // Front
+    faces.push_back({"Back", Eigen::Isometry3d(Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY()))}); // Back
+    faces.push_back({"Right", Eigen::Isometry3d(Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX()))}); // Right
+    faces.push_back({"Left", Eigen::Isometry3d(Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitX()))}); // Left
+    ```
+- złożenie obrotu do ścianki i obrotu chwytaka wokól własnej osi oraz pochylenia
+  ```cpp
+    Eigen::Isometry3d T_face = face.second;
+    ...
+    Eigen::Isometry3d T_O_Ogr = T_face * T_local;
+  ```
+  `T_local` jest liczone tak samo jak w `show_side_grasps`
+- pętle po każdej ze ścianek
+
+| ![Front](photos/zad7/front.png) | ![Back](photos/zad7/back.png) |
+| --- | --- |
+| ![Left](photos/zad7/left.png) | ![Right](photos/zad7/right.png) |
+| ![Top](photos/zad7/top.png) | ![Bottom](photos/zad7/bottom.png) |

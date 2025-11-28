@@ -22,6 +22,7 @@ add_executable(hello_moveit src/hello_moveit.cpp)
 add_executable(print_frames src/zad5.cpp)
 add_executable(one_grasp src/one_grasp.cpp)
 add_executable(show_side_grasps src/show_side_grasps.cpp)
+add_executable(show_all_grasps src/show_all_grasps.cpp)
 add_executable(pick_place src/pick_place.cpp)
 
 target_include_directories(hello_moveit PUBLIC
@@ -32,6 +33,7 @@ target_compile_features(hello_moveit PUBLIC c_std_99 cxx_std_17)  # Require C99 
 target_compile_features(print_frames PUBLIC c_std_99 cxx_std_17)
 target_compile_features(one_grasp PUBLIC c_std_99 cxx_std_17)
 target_compile_features(show_side_grasps PUBLIC c_std_99 cxx_std_17)
+target_compile_features(show_all_grasps PUBLIC c_std_99 cxx_std_17)
 target_compile_features(pick_place PUBLIC c_std_99 cxx_std_17)
 
 ament_target_dependencies(
@@ -72,6 +74,18 @@ ament_target_dependencies(
 )
 
 ament_target_dependencies(
+  show_all_grasps
+  "rclcpp"
+  "moveit_ros_planning_interface"
+  "moveit_visual_tools"
+  "gazebo_msgs"
+  "tf2_ros"
+  "geometry_msgs"
+  "moveit_msgs"
+  "shape_msgs"
+)
+
+ament_target_dependencies(
   pick_place
   "rclcpp"
   "moveit_ros_planning_interface"
@@ -100,6 +114,7 @@ install(TARGETS print_frames DESTINATION lib/${PROJECT_NAME})
 install(TARGETS hello_moveit DESTINATION lib/${PROJECT_NAME})
 install(TARGETS one_grasp DESTINATION lib/${PROJECT_NAME})
 install(TARGETS show_side_grasps DESTINATION lib/${PROJECT_NAME})
+install(TARGETS show_all_grasps DESTINATION lib/${PROJECT_NAME})
 install(TARGETS pick_place DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
