@@ -124,7 +124,7 @@ public:
     for (int i_z = 0; i_z < 4; ++i_z) {
         double roll = i_z * (M_PI / 2.0);
 
-        for (int i_y = 0; i_y < 3; ++i_y) {
+        for (int i_y = -1; i_y < 2; ++i_y) {
             double pitch = i_y * (M_PI / 6.0);
 
             Eigen::Isometry3d T_O_Ogr = Eigen::Isometry3d::Identity();

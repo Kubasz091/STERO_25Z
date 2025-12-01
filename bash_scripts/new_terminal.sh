@@ -1,3 +1,4 @@
+source ~/.bashrc
 source /opt/ros/iron/setup.bash
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 
