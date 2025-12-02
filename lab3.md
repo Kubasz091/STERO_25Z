@@ -115,7 +115,7 @@ Aby uzyskać 12 chwytów dla jednej ścianki, macierz $\mathcal{T}_{O_{gr}}^{O}$
     Obrót wirtualnego obiektu wokół osi Y, co powoduje pochylenie chwytaka względem normalnej powierzchni (przydatne do unikania kolizji z innymi obiektami).
     * $RY(0^\circ)$
     * $RY(30^\circ)$
-    * $RY(60^\circ)$
+    * $RY(-30^\circ)$
 
 ---
 
@@ -134,11 +134,11 @@ Aby uzyskać 12 chwytów dla jednej ścianki, macierz $\mathcal{T}_{O_{gr}}^{O}$
 - W skrypcie dodano Node-a który publikuje markery z częstotliwościa określaną w parametrze `viz_rate`. Zrobiliśmy tak dlatego, że marker chwytaka znikał zaraz po opublikowaniu.
 
 **Wizualizacje:**
-| ![Grasp 1](photos/zad5/chwyt1.png) | ![Grasp 2](photos/zad5/chwyt2.png) | ![Grasp 3](photos/zad5/chwyt3.png) |
+| ![Grasp 1](photos/zad5/grasp1.png) | ![Grasp 2](photos/zad5/grasp2.png) | ![Grasp 3](photos/zad5/grasp3.png) |
 | --- | --- | --- |
-| ![Grasp 4](photos/zad5/chwyt4.png) | ![Grasp 5](photos/zad5/chwyt5.png) | ![Grasp 6](photos/zad5/chwyt6.png) |
-| ![Grasp 7](photos/zad5/chwyt7.png) | ![Grasp 8](photos/zad5/chwyt8.png) | ![Grasp 9](photos/zad5/chwyt9.png) |
-| ![Grasp 10](photos/zad5/chwyt10.png) | ![Grasp 11](photos/zad5/chwyt11.png) | ![Grasp 12](photos/zad5/chwyt12.png) |
+| ![Grasp 4](photos/zad5/grasp4.png) | ![Grasp 5](photos/zad5/grasp5.png) | ![Grasp 6](photos/zad5/grasp6.png) |
+| ![Grasp 7](photos/zad5/grasp7.png) | ![Grasp 8](photos/zad5/grasp8.png) | ![Grasp 9](photos/zad5/grasp9.png) |
+| ![Grasp 10](photos/zad5/grasp10.png) | ![Grasp 11](photos/zad5/grasp11.png) | ![Grasp 12](photos/zad5/grasp12.png) |
 
 ---
 
@@ -188,7 +188,7 @@ Dla każdej ścianki generowany jest zestaw 12 chwytów poprzez iteracyjne skła
    Obrót wokół osi Y, zmieniający kąt natarcia chwytaka:
    * $RY(0^\circ)$
    * $RY(30^\circ)$
-   * $RY(60^\circ)$
+   * $RY(-30^\circ)$
 
 ## Zadanie 7
 Zaimplementowano wezeł `show_all_grasps` zgodny z powyższym opisem.
