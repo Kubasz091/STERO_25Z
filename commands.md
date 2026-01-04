@@ -45,4 +45,5 @@ ros2 service type <service_name>
 ros2 interface show <topic/service_name>
 
 ros2 service call /get_entity_state gazebo_msgs/srv/GetEntityState "{<args>}"
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
