@@ -26,20 +26,46 @@ W celu weryfikacji drzewa transformacji (TF) użyto narzędzia:
 ros2 run rqt_tf_tree rqt_tf_tree --force-discover
 ```
 
-@TODO: dodac analize drzewa architektury systemu
+### Analiza Drzewa Transformacji
+
+Na podstawie wygenerowanego grafu `tf_tree.pdf`, struktura układów współrzędnych robota TIAGo prezentuje się następująco:
+
+1.  **Globalne Układy Odniesienia:**
+
+    - `map`: Główny, statyczny układ współrzędnych mapy. Jest korzeniem drzewa w przypadku uruchomionej nawigacji.
+    - `odom`: Układ odometrii. Transformacja `map` -> `odom` jest dynamiczna i korygowana przez system lokalizacji, niwelując błędy dryfu odometrii.
+
+2.  **Podstawa Robota:**
+
+    - `base_footprint`: Rzut środka robota na płaszczyznę podłoża. Transformacja `odom` -> `base_footprint` jest publikowana przez kontroler podwozia (`mobile_base_controller`) na podstawie enkoderów kół.
+    - `base_link`: Główny człon fizyczny robota, sztywno połączony z `base_footprint`.
+
+3.  **Łańcuchy Kinematyczne:**
+
+    - **Tułów:** `torso_lift_link` (ruchomy w osi Z).
+    - **Głowa:** `head_1_link`, `head_2_link` (pan/tilt).
+    - **Ramię:** Seria ogniw `arm_1_link` do `arm_7_link`, zakończona punktem `wrist_ft_link` (czujnik siły/momentu).
+    - **Chwytak:** Zamocowany bezpośrednio za `wrist_ft_link`. Składa się z bazy (`gripper_link`) oraz ruchomych palców (`gripper_left_finger_link`, `gripper_right_finger_link`).
+
+4.  **Sensory:**
+    - **LiDAR:** `base_laser_link` - umieszczony w podstawie.
+    - **Kamera RGB-D:** `head_front_camera_link` (oraz ramki optyczne `_optical_frame`) - umieszczona na głowie, porusza się wraz z nią, dostarczając obraz i chmurę punktów w odniesieniu do aktualnej pozycji głowy.
+
+Drzewo jest spójne (jeden korzeń), co oznacza, że wszystkie transformacje są poprawnie publikowane, umożliwiając działanie algorytmów planowania ruchu (MoveIt) oraz nawigacji.
+
 _Pełne drzewo transformacji zostało wyeksportowane do pliku `tf_tree.pdf`._
 
 ## 3. Analiza Systemu i Sensorów
 
 Przeprowadzono weryfikację dostępnych tematów ROS 2 oraz poprawności danych z sensorów.
 
-| Komponent          | Temat (Topic)                                | Typ Wiadomości                | Status     | Uwagi                                    |
-| :----------------- | :------------------------------------------- | :---------------------------- | :--------- | :--------------------------------------- |
-| **Sterowanie**     | `/cmd_vel`                                   | `geometry_msgs/msg/Twist`     | Oczekujący | Robot stoi (brak komend)                 |
-| **Odometria**      | `/mobile_base_controller/odom`               | `nav_msgs/msg/Odometry`       | **OK**     | Poprawna estymacja pozycji kół           |
-| **LiDAR**          | `/scan_raw`                                  | `sensor_msgs/msg/LaserScan`   | **OK**     | **Uwaga:** Temat `/scan` jest nieaktywny |
-| **Kamera RGB**     | `/head_front_camera/rgb/image_raw`           | `sensor_msgs/msg/Image`       | **OK**     | Obraz wizyjny dostępny                   |
-| **Chmura Punktów** | `/head_front_camera/depth_registered/points` | `sensor_msgs/msg/PointCloud2` | **OK**     | Mapa głębi dostępna                      |
+| Komponent          | Temat (Topic)                                | Typ Wiadomości                | Status     |
+| :----------------- | :------------------------------------------- | :---------------------------- | :--------- |
+| **Sterowanie**     | `/cmd_vel`                                   | `geometry_msgs/msg/Twist`     | Oczekujący |
+| **Odometria**      | `/mobile_base_controller/odom`               | `nav_msgs/msg/Odometry`       | **OK**     |
+| **LiDAR**          | `/scan_raw`                                  | `sensor_msgs/msg/LaserScan`   | **OK**     |
+| **Kamera RGB**     | `/head_front_camera/rgb/image_raw`           | `sensor_msgs/msg/Image`       | **OK**     |
+| **Chmura Punktów** | `/head_front_camera/depth_registered/points` | `sensor_msgs/msg/PointCloud2` | **OK**     |
 
 ## 4. Implementacja Algorytmu Sterowania (Hexagon)
 
@@ -69,17 +95,6 @@ Poniżej przedstawiono zrzuty ekranu dokumentujące wykonanie zadań w środowis
 
 ## 6. Plan Testów i Weryfikacja Wymagań (SysML)
 
-## 4. Weryfikacja Wizualna
-
-Poniżej przedstawiono zrzuty ekranu dokumentujące wykonanie zadań w środowisku symulacyjnym.
-
-### Zadanie: Rysowanie wybranej figury geometrycznej (w naszym przypadku był to hexagon)
-
-![Wizualizacja: Hexagon - Wynik](photos/zad_hex/path_result.png)
-![Wizualizacja: Hexagon - Odometria](photos/zad_hex/path_odometry.png)
-
-## 5. Plan Testów i Weryfikacja Wymagań (SysML)
-
 Struktura wymagań oraz planowane przypadki testowe zostały zamodelowane w notacji SysML.
 
 ```mermaid
@@ -98,43 +113,43 @@ classDiagram
         }
         class Autonomia {
             <<Requirement>>
-            Text: "Bezpieczny przejazd A -> B"
+            Bezpieczny przejazd A -> B
             Constraint: Zero kolizji
         }
         class Sterowanie {
             <<Requirement>>
-            Text: "Manualna kontrola prędkości"
+            Manualna kontrola prędkości
             Interface: cmd_vel
         }
     }
 
     %% --- Pakiet Testów (Twoje scenariusze) ---
     namespace Kampania_Testowa_Symulacja {
-        class SensorCheck {
+        class Weryfikacja_Dzialania_Sensorow {
             <<TestCase>>
             Tools: Gazebo (World) + RViz
             Input: Postawienie ściany przed robotem
             Check: Wizualizacja chmury punktów/LaserScan
         }
-        class Nav_ObstacleAvoidance {
+        class Nawigacja_z_Omijaniem_Przeszkod {
             <<TestCase>>
             Tools: Navigation Stack
             Input: Goal Pose (za przeszkodą)
             Check: Robot planuje trasę dookoła
         }
-        class Teleop_Keyboard {
+        class Teleoperacja_z_Klawiatury {
             <<TestCase>>
             Tools: teleop_twist_keyboard
-            Input: Klawisze i, j, k, l
+            Input: Klawisze i, j, k, l, u, o
             Check: Robot porusza się zgodnie z komendą
         }
     }
 
     %% --- Relacje Weryfikacji (Traceability) ---
-    SensorCheck ..|> Percepcja : verify
-    Nav_ObstacleAvoidance ..|> Autonomia : verify
-    Nav_ObstacleAvoidance ..|> Percepcja : uses
-    Teleop_Keyboard ..|> Sterowanie : verify
+    Weryfikacja_Dzialania_Sensorow ..|> Percepcja : verify
+    Nawigacja_z_Omijaniem_Przeszkod ..|> Autonomia : verify
+    Nawigacja_z_Omijaniem_Przeszkod ..|> Percepcja : uses
+    Teleoperacja_z_Klawiatury ..|> Sterowanie : verify
 ```
 
 ## 7. Kampania Testowa
