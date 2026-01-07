@@ -67,7 +67,7 @@ Przeprowadzono weryfikację dostępnych tematów ROS 2 oraz poprawności danych 
 | **Kamera RGB**     | `/head_front_camera/rgb/image_raw`           | `sensor_msgs/msg/Image`       | **OK**     |
 | **Chmura Punktów** | `/head_front_camera/depth_registered/points` | `sensor_msgs/msg/PointCloud2` | **OK**     |
 
-## 4. Implementacja Algorytmu Sterowania (Hexagon)
+## 4. Implementacja Algorytmu Sterowania
 
 W celu realizacji zadania poruszania się po zadanej trajektorii (sześciokąt), zaimplementowano dedykowany węzeł ROS 2 w języku C++: `hexagon_mover.cpp`.
 
@@ -93,64 +93,11 @@ Poniżej przedstawiono zrzuty ekranu dokumentujące wykonanie zadań w środowis
 ![Wizualizacja: Hexagon - Wynik](photos/zad_hex/path_result.png)
 ![Wizualizacja: Hexagon - Odometria](photos/zad_hex/path_odometry.png)
 
-## 6. Plan Testów i Weryfikacja Wymagań (SysML)
+## 6. Plan Testów i Weryfikacja Wymagań
 
 Struktura wymagań oraz planowane przypadki testowe zostały zamodelowane w notacji SysML.
+![Diagram Kampanii testów](photos/diagram_kampanii_testów.png)
 
-```mermaid
-classDiagram
-    %% --- Definicje Stylów ---
-    classDef requirement fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:black;
-    classDef testcase fill:#E1F5FE,stroke:#0288D1,stroke-width:1px,color:black;
-    classDef hardware fill:#E0E0E0,stroke:#616161,stroke-width:1px,stroke-dasharray: 5 5;
-
-    %% --- Pakiet Wymagań (Co robot ma robić?) ---
-    namespace Wymagania_Systemowe {
-        class Percepcja {
-            <<Requirement>>
-            Wykrywanie przeszkód (ścian)
-            Source: LiDAR / Proximity
-        }
-        class Autonomia {
-            <<Requirement>>
-            Bezpieczny przejazd A -> B
-            Constraint: Zero kolizji
-        }
-        class Sterowanie {
-            <<Requirement>>
-            Manualna kontrola prędkości
-            Interface: cmd_vel
-        }
-    }
-
-    %% --- Pakiet Testów (Twoje scenariusze) ---
-    namespace Kampania_Testowa_Symulacja {
-        class Weryfikacja_Dzialania_Sensorow {
-            <<TestCase>>
-            Tools: Gazebo (World) + RViz
-            Input: Postawienie ściany przed robotem
-            Check: Wizualizacja chmury punktów/LaserScan
-        }
-        class Nawigacja_z_Omijaniem_Przeszkod {
-            <<TestCase>>
-            Tools: Navigation Stack
-            Input: Goal Pose (za przeszkodą)
-            Check: Robot planuje trasę dookoła
-        }
-        class Teleoperacja_z_Klawiatury {
-            <<TestCase>>
-            Tools: teleop_twist_keyboard
-            Input: Klawisze i, j, k, l, u, o
-            Check: Robot porusza się zgodnie z komendą
-        }
-    }
-
-    %% --- Relacje Weryfikacji (Traceability) ---
-    Weryfikacja_Dzialania_Sensorow ..|> Percepcja : verify
-    Nawigacja_z_Omijaniem_Przeszkod ..|> Autonomia : verify
-    Nawigacja_z_Omijaniem_Przeszkod ..|> Percepcja : uses
-    Teleoperacja_z_Klawiatury ..|> Sterowanie : verify
-```
 
 ## 7. Kampania Testowa
 

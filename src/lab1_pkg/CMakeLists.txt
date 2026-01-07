@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 add_executable(hexagon_mover src/hexagon_mover.cpp)
 target_include_directories(hexagon_mover PUBLIC
@@ -24,6 +26,27 @@ ament_target_dependencies(
 )
 
 install(TARGETS hexagon_mover
+  DESTINATION lib/${PROJECT_NAME})
+
+add_executable(square_mover src/square_mover.cpp)
+target_include_directories(square_mover PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(square_mover PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies(
+  square_mover
+  "rclcpp"
+  "geometry_msgs"
+  "nav_msgs"
+  "tf2"
+  "tf2_geometry_msgs"
+)
+
+install(TARGETS square_mover
+  DESTINATION lib/${PROJECT_NAME})
+
+install(PROGRAMS
+  scripts/plot_results.py
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
