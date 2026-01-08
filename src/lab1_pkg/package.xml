@@ -14,6 +14,13 @@
   <depend>nav_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
+  <exec_depend>launch_pal</exec_depend>
+  <exec_depend>tiago_description</exec_depend>
+  <exec_depend>tiago_gazebo</exec_depend>
+  <exec_depend>tiago_bringup</exec_depend>
+  <exec_depend>tiago_2dnav</exec_depend>
+  <exec_depend>tiago_moveit_config</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
