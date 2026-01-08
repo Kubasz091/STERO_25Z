@@ -28,11 +28,8 @@ public:
         this->declare_parameter("square_len", 1.0);
         this->declare_parameter("laps", 1);
         this->declare_parameter("direction", "ccw"); // cw or ccw
-        this->declare_parameter("linear_brake_dist", 0.2); // Increased default
-        this->declare_parameter("angular_brake_dist", 0.5); // Increased default
-        // Inertia factor (simple heuristic multiplier for stopping distance or time)
-        // User asked for a parameter to predict inertia. 
-        // We will use it to scale the braking distance.
+        this->declare_parameter("linear_brake_dist", 0.2);
+        this->declare_parameter("angular_brake_dist", 0.5);
         this->declare_parameter("inertia_factor", 1.0); 
 
         square_len_ = this->get_parameter("square_len").as_double();
@@ -100,8 +97,6 @@ private:
         pub_path_->publish(path_);
 
         if (first_odom_) {
-             // Store initial pose as reference for relative movement if needed
-             // But simpler to just track current position relative to start of side
              start_pose_ = current_pose_;
              first_odom_ = false;
              state_ = INIT_MOVE; // Start moving once we have odometry
@@ -192,10 +187,6 @@ private:
                     "MOVING: rem=%.3f, brake_at=%.3f", dist_remaining, linear_brake_dist_);
 
                 if (dist_remaining <= linear_brake_dist_) {
-                     // Decelerate or stop
-                     // Simple predictive stop: if we are very close or overshot, stop
-                     // Logic: if dist_remaining <= 0, we are done. 
-                     // Or if dist_remaining is small, slow down.
                      if (dist_remaining <= 0.02) {
                          cmd.linear.x = 0.0;
                          state_ = INIT_TURN;
@@ -205,11 +196,9 @@ private:
                          cmd.linear.x = speed;
                      }
                 } else {
-                    cmd.linear.x = 0.2; // Cruise speed as per tips
+                    cmd.linear.x = 0.2;
                 }
                 cmd.angular.z = 0.0;
-                
-                // Correction for straight line drift could be added here
                 break;
             }
             case INIT_TURN: {
@@ -232,7 +221,6 @@ private:
                         if (current_side_ >= 4) {
                             current_side_ = 0;
                             current_lap_++;
-                            // Calculate Lap Error Here if needed, or just post-process
                             if (current_lap_ >= total_laps_) {
                                 state_ = FINISHED;
                             } else {
@@ -242,12 +230,11 @@ private:
                             state_ = INIT_MOVE;
                         }
                     } else {
-                         // Proportional braking (min vel 0.2 for Tiago rotation)
                          double speed = std::max(0.2, 0.3 * (std::abs(diff) / angular_brake_dist_));
                          cmd.angular.z = speed * (diff > 0 ? 1.0 : -1.0);
                     }
                 } else {
-                    cmd.angular.z = 0.3 * (diff > 0 ? 1.0 : -1.0); // Cruise turn speed
+                    cmd.angular.z = 0.3 * (diff > 0 ? 1.0 : -1.0);
                 }
                 cmd.linear.x = 0.0;
                 break;
