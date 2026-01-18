@@ -168,13 +168,13 @@ def declare_actions(
 
     launch_description.add_action(tiago_bringup)
 
-    # tuck_arm = Node(package='tiago_gazebo',
-    #                 executable='tuck_arm.py',
-    #                 emulate_tty=True,
-    #                 output='both',
-    #                 condition=IfCondition(LaunchConfiguration('tuck_arm')))
+    tuck_arm = Node(package='tiago_gazebo',
+                    executable='tuck_arm.py',
+                    emulate_tty=True,
+                    output='both',
+                    condition=IfCondition(LaunchConfiguration('tuck_arm')))
 
-    # launch_description.add_action(tuck_arm)
+    launch_description.add_action(tuck_arm)
 
     return
 

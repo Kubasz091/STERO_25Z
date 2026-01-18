@@ -12,6 +12,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 add_executable(hexagon_mover src/hexagon_mover.cpp)
 target_include_directories(hexagon_mover PUBLIC
@@ -49,6 +51,7 @@ install(PROGRAMS
   scripts/plot_results.py
   DESTINATION lib/${PROJECT_NAME})
 
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -60,6 +63,24 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+# Define place_navigator executable
+add_executable(place_navigator src/place_navigator.cpp)
+target_include_directories(place_navigator PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(place_navigator PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies(
+  place_navigator
+  "rclcpp"
+  "rclcpp_action"
+  "nav2_msgs"
+  "geometry_msgs"
+)
+
+install(TARGETS place_navigator
+  DESTINATION lib/${PROJECT_NAME})
+
 
 
 install(DIRECTORY
