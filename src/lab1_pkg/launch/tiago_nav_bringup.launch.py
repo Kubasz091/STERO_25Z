@@ -37,6 +37,10 @@ class LaunchArguments(LaunchArgumentsBase):
 
     is_public_sim: DeclareLaunchArgument = CommonArgs.is_public_sim
     world_name: DeclareLaunchArgument = CommonArgs.world_name
+    world_package: DeclareLaunchArgument = DeclareLaunchArgument(
+        'world_package',
+        default_value='lab1_pkg',
+        description='Package containing the world file')
     base_type: DeclareLaunchArgument = TiagoArgs.base_type
     slam: DeclareLaunchArgument = CommonArgs.slam
 
@@ -57,13 +61,34 @@ def generate_launch_description():
 def public_nav_function(context, *args, **kwargs):
     base_type = read_launch_argument("base_type", context)
     world_name = read_launch_argument("world_name", context)
+    world_package = read_launch_argument("world_package", context)
     actions = []
     tiago_2dnav = get_package_share_directory("tiago_2dnav")
-    my_pkg_path = get_package_share_directory('lab1_pkg')
+    my_pkg_path = get_package_share_directory(world_package)
 
     param_file = os.path.join(tiago_2dnav, "params", "tiago_" + base_type + "_nav_public_sim.yaml")
 
-    map_path = os.path.join(my_pkg_path, "maps", "my_map2.yaml")
+    # Assuming map name matches world name, or defaults to my_map2 if not found?
+    # Better to assume map name matches world name for consistency.
+    # But user might have legacy my_map2. Let's try to be smart or just use the pattern.
+    # User's error log showed loading my_map2.yaml.
+    # Let's keep it simple: assume world_name is used for map name OR default to world_name.
+    # Actually, maps are usually manually created. 
+    # Let's try to look for world_name.yaml, if not fallback?
+    # No, keep it simple. User likely wants dynamic loading.
+    
+    map_name = world_name if world_name else 'my_map2'
+    # Check if we should strip .world extension if present
+    if map_name.endswith('.world'):
+        map_name = map_name[:-6]
+
+    map_path = os.path.join(my_pkg_path, "maps", map_name + ".yaml")
+    
+    # Fallback to hardcoded if dynamic doesn't exist?
+    if not os.path.exists(map_path):
+         print(f"[tiago_nav_bringup] Map {map_path} not found, falling back to my_map2.yaml")
+         map_path = os.path.join(my_pkg_path, "maps", "my_map2.yaml")
+
     rviz_config_file = os.path.join(my_pkg_path, "config", "rviz.rviz")
 
     nav_bringup_launch = include_scoped_launch_py_description(

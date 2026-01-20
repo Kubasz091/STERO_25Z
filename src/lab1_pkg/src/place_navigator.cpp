@@ -100,6 +100,7 @@ private:
         double mag = std::sqrt(pose_data.z_sin * pose_data.z_sin + pose_data.w_cos * pose_data.w_cos);
         if (mag < 1e-6) {
             mag = 1.0;
+        }
 
         goal_msg.pose.pose.orientation.x = 0.0;
         goal_msg.pose.pose.orientation.y = 0.0;

@@ -14,6 +14,12 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/NavigateToWaypoints.action"
+  DEPENDENCIES geometry_msgs
+)
 
 add_executable(hexagon_mover src/hexagon_mover.cpp)
 target_include_directories(hexagon_mover PUBLIC
@@ -49,6 +55,8 @@ install(TARGETS square_mover
 
 install(PROGRAMS
   scripts/plot_results.py
+  scripts/lab2_p2_node.py
+  scripts/test_p2_client.py
   DESTINATION lib/${PROJECT_NAME})
 
 
