@@ -39,13 +39,25 @@ def start_gzserver(context, *args, **kwargs):
     world_name = LaunchConfiguration('world_name').perform(context)
 
     world = ''
-    if os.path.exists(os.path.join(my_pkg_path, 'worlds', world_name + '.world')):
-        world = os.path.join(my_pkg_path, 'worlds', world_name + '.world')
-        print(f"[pal_gazebo] Loading world from lab1_pkg package: {world}")
-    if os.path.exists(os.path.join(priv_pkg_path, 'worlds', world_name + '.world')):
-        world = os.path.join(priv_pkg_path, 'worlds', world_name + '.world')
-    elif os.path.exists(os.path.join(original_path, 'worlds', world_name + '.world')):
-        world = os.path.join(original_path, 'worlds', world_name + '.world')
+    world_package = LaunchConfiguration('world_package').perform(context)
+    if world_package:
+        try:
+             pkg_path = get_package_share_directory(world_package)
+             if os.path.exists(os.path.join(pkg_path, 'worlds', world_name + '.world')):
+                 world = os.path.join(pkg_path, 'worlds', world_name + '.world')
+                 print(f"[pal_gazebo] Loading world from {world_package} package: {world}")
+        except Exception:
+             print(f"[pal_gazebo] Could not find package {world_package}")
+
+    if not world:
+        if os.path.exists(os.path.join(my_pkg_path, 'worlds', world_name + '.world')):
+            world = os.path.join(my_pkg_path, 'worlds', world_name + '.world')
+            print(f"[pal_gazebo] Loading world from lab1_pkg package: {world}")
+        elif os.path.exists(os.path.join(priv_pkg_path, 'worlds', world_name + '.world')):
+            world = os.path.join(priv_pkg_path, 'worlds', world_name + '.world')
+        elif os.path.exists(os.path.join(original_path, 'worlds', world_name + '.world')):
+            world = os.path.join(original_path, 'worlds', world_name + '.world')
+
 
     params_file = PathJoinSubstitution(
         substitutions=[original_path, 'config', 'gazebo_params.yaml'])
@@ -96,6 +108,11 @@ def generate_launch_description():
         'world_name', default_value='',
         description="Specify world name, we'll convert to full path"
     )
+    declare_world_package = DeclareLaunchArgument(
+        'world_package', default_value='',
+        description='Specify package containing the world file'
+    )
+
     declare_debug = DeclareLaunchArgument(
         'debug', default_value='False',
         choices=['True', 'False'],
@@ -112,6 +129,8 @@ def generate_launch_description():
 
     ld.add_action(declare_debug)
     ld.add_action(declare_world_name)
+    ld.add_action(declare_world_package)
+
 
     ld.add_action(SetEnvironmentVariable('GAZEBO_MODEL_PATH', model_path))
     # Using this prevents shared library from being found
