@@ -79,25 +79,8 @@ class Lab2P2Node(Node):
             pose.pose.orientation.w = 1.0 
             poses.append(pose)
 
-        # Estimate total path length
-        path_segments_len = 0.0
-        current_pose_check = self.get_robot_pose()
-        
-        if current_pose_check:
-             dx = waypoints[0].x - current_pose_check.pose.position.x
-             dy = waypoints[0].y - current_pose_check.pose.position.y
-             path_segments_len += math.sqrt(dx*dx + dy*dy)
-        else:
-            # If we cant get pose, assume we are at 0,0 or just verify segments
-            self.get_logger().warn('Could not get robot pose for initial distance calc.')
-        
-        for i in range(len(waypoints) - 1):
-            dx = waypoints[i+1].x - waypoints[i].x
-            dy = waypoints[i+1].y - waypoints[i].y
-            path_segments_len += math.sqrt(dx*dx + dy*dy)
-            
-        original_total_dist = path_segments_len
-        if original_total_dist == 0: original_total_dist = 1.0
+        # No pre-calculation of distance here. We will capture the true path length from Nav2 feedback.
+        original_total_dist = None
 
         # Start Navigation
         self.navigator.goThroughPoses(poses)
@@ -106,14 +89,24 @@ class Lab2P2Node(Node):
         
         last_yaw = 0.0
         # Initialize last_yaw from current pose if available
+        current_pose_check = self.get_robot_pose()
         if current_pose_check:
             q = current_pose_check.pose.orientation
             siny_cosp = 2 * (q.w * q.z + q.x * q.y)
             cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
             last_yaw = math.atan2(siny_cosp, cosy_cosp)
         
+        # Head control parameters
+        head_kp = 3.0
+        max_head_pan = 1.0
+        
+        # Smoothing filter (Exponential Looking Average)
+        smoothed_head_yaw = 0.0
+        alpha = 0.2 # low alpha = heavy smoothing
+        
         while not self.navigator.isTaskComplete():
             if goal_handle.is_cancel_requested:
+                # ... (rest of cancel logic unchanged, simpler to just match context)
                 goal_handle.canceled()
                 self.navigator.cancelTask()
                 self.get_logger().info('Goal canceled')
@@ -123,8 +116,14 @@ class Lab2P2Node(Node):
             nav_feedback = self.navigator.getFeedback()
             if nav_feedback:
                 dist_rem = nav_feedback.distance_remaining
-                ratio = 1.0
-                if original_total_dist > 0:
+                
+                # Capture the initial full path length reported by Nav2 (once)
+                if original_total_dist is None and dist_rem > 0.1:
+                    original_total_dist = dist_rem
+                    self.get_logger().info(f'Initial path length captured: {original_total_dist:.2f} m')
+                
+                ratio = 0.0
+                if original_total_dist and original_total_dist > 0:
                     ratio = 1.0 - (dist_rem / original_total_dist)
                 
                 if ratio < 0: ratio = 0.0
@@ -133,7 +132,7 @@ class Lab2P2Node(Node):
                 feedback_msg.percentage_complete = ratio * 100.0
                 goal_handle.publish_feedback(feedback_msg)
 
-            # --- Head Control ---
+            # --- Head Control (Proportional Regulator with Smoothing) ---
             current_pose = self.get_robot_pose()
             if current_pose:
                 # Calculate yaw
@@ -148,22 +147,24 @@ class Lab2P2Node(Node):
                 
                 last_yaw = current_yaw
                 
-                turn_threshold = 0.01 
+                # P-Controller
+                target_head_yaw = head_kp * yaw_diff
                 
-                head_yaw = 0.0
-                if yaw_diff > turn_threshold: # Turning Left
-                    head_yaw = 0.5 
-                elif yaw_diff < -turn_threshold: # Turning Right
-                    head_yaw = -0.5 
-                else:
-                    head_yaw = 0.0 
-                    
+                # Clamp limits
+                if target_head_yaw > max_head_pan: target_head_yaw = max_head_pan
+                if target_head_yaw < -max_head_pan: target_head_yaw = -max_head_pan
+                
+                # Apply EMA Smoothing
+                smoothed_head_yaw = (alpha * target_head_yaw) + ((1.0 - alpha) * smoothed_head_yaw)
+                
                 traj = JointTrajectory()
                 traj.joint_names = ['head_1_joint', 'head_2_joint']
                 point = JointTrajectoryPoint()
-                point.positions = [float(head_yaw), 0.0] 
-                point.time_from_start.sec = 1
-                point.time_from_start.nanosec = 0
+                point.positions = [float(smoothed_head_yaw), 0.0] 
+                
+                # Allow 0.2s for hardware to interpolate (smoother than 0.1s step)
+                point.time_from_start.sec = 0
+                point.time_from_start.nanosec = 200000000 # 0.2s
                 traj.points.append(point)
                 self.head_pub.publish(traj)
             

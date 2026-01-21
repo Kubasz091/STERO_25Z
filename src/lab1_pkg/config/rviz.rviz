@@ -7,6 +7,8 @@ Panels:
         - /Global Options1
         - /TF1/Tree1
         - /Global Planner1
+        - /Global Planner1/Global Costmap1
+        - /Global Planner1/Global Costmap1/Status1
         - /Controller1
         - /MarkerArray1
         - /MotionPlanning1
@@ -566,7 +568,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /global_costmap/published_footprint
           Value: false
-      Enabled: true
+      Enabled: false
       Name: Global Planner
     - Class: rviz_common/Group
       Displays:
@@ -1360,7 +1362,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/XYOrbit
-      Distance: 10.874382972717285
+      Distance: 2.2897346019744873
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1375,10 +1377,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7347957491874695
+      Pitch: 0.4897960126399994
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz_default_plugins)
-      Yaw: 2.5605616569519043
+      Yaw: 4.110566139221191
     Saved:
       - Class: rviz_default_plugins/XYOrbit
         Distance: 5.856039047241211
