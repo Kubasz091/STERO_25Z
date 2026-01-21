@@ -16,7 +16,7 @@ import os
 from os import environ, pathsep
 from ament_index_python.packages import get_package_prefix
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, SetLaunchConfiguration
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, SetLaunchConfiguration, TimerAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_pal.include_utils import include_scoped_launch_py_description
@@ -115,7 +115,14 @@ def declare_actions(
         },
         condition=IfCondition(LaunchConfiguration('navigation')))
 
-    launch_description.add_action(navigation)
+    # launch_description.add_action(navigation)
+    
+    # Add delay to let Gazebo/Robot spawn and publish TFs
+    delayed_navigation = TimerAction(
+        period=15.0,
+        actions=[navigation]
+    )
+    launch_description.add_action(delayed_navigation)
 
     advanced_navigation = include_scoped_launch_py_description(
         pkg_name='tiago_advanced_2dnav',
@@ -148,7 +155,8 @@ def declare_actions(
         paths=['launch', 'robot_spawn.launch.py'],
         launch_arguments={
             'robot_name': robot_name,
-            'base_type': launch_args.base_type}
+            'base_type': launch_args.base_type,
+            'use_sim_time': LaunchConfiguration("use_sim_time")}
     )
 
     launch_description.add_action(robot_spawn)

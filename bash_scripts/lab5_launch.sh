@@ -1,1 +1,1 @@
-ros2 launch lab1_pkg  stero_navigation.launch.py navigation:=True moveit:=True is_public_sim:=True world_name:=stero_dom # slam:=True
+ros2 launch lab1_pkg  stero_navigation.launch.py navigation:=True moveit:=True is_public_sim:=True world_name:=stero_korytarz # slam:=True

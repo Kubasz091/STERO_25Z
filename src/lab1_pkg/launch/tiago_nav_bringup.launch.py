@@ -66,7 +66,10 @@ def public_nav_function(context, *args, **kwargs):
     tiago_2dnav = get_package_share_directory("tiago_2dnav")
     my_pkg_path = get_package_share_directory(world_package)
 
-    param_file = os.path.join(tiago_2dnav, "params", "tiago_" + base_type + "_nav_public_sim.yaml")
+    # param_file = os.path.join(tiago_2dnav, "params", "tiago_" + base_type + "_nav_public_sim.yaml")
+    # Use local custom config
+    pkg_share = get_package_share_directory("lab1_pkg")
+    param_file = os.path.join(pkg_share, "config", "nav2_params.yaml")
 
     # Assuming map name matches world name, or defaults to my_map2 if not found?
     # Better to assume map name matches world name for consistency.

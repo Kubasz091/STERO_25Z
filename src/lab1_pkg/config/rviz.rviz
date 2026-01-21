@@ -6,6 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Tree1
+        - /Global Planner1
+        - /Controller1
         - /MarkerArray1
         - /MotionPlanning1
       Splitter Ratio: 0.5833333134651184
@@ -408,7 +410,7 @@ Visualization Manager:
       Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: true
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic:
         Depth: 1
@@ -424,7 +426,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /map_updates
       Use Timestamp: false
-      Value: true
+      Value: false
     - Alpha: 1
       Class: nav2_rviz_plugins/ParticleCloud
       Color: 0; 180; 0
@@ -472,7 +474,7 @@ Visualization Manager:
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
-          Enabled: true
+          Enabled: false
           Name: Downsampled Costmap
           Topic:
             Depth: 1
@@ -488,7 +490,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /downsampled_costmap_updates
           Use Timestamp: false
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
@@ -1358,25 +1360,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/XYOrbit
-      Distance: 1.7250949144363403
+      Distance: 10.874382972717285
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.37429213523864746
-        Y: -0.2006300389766693
-        Z: 9.5367431640625e-07
+        X: 0.8133023977279663
+        Y: 0.595646858215332
+        Z: 1.169123720501375e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.35979610681533813
+      Pitch: 0.7347957491874695
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz_default_plugins)
-      Yaw: 5.245565891265869
+      Yaw: 2.5605616569519043
     Saved:
       - Class: rviz_default_plugins/XYOrbit
         Distance: 5.856039047241211
@@ -1423,4 +1425,4 @@ Window Geometry:
     collapsed: true
   Width: 1536
   X: 0
-  Y: 27
+  Y: 109

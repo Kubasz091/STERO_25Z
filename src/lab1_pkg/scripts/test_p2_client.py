@@ -16,9 +16,11 @@ class TestP2Client(Node):
         goal_msg = NavigateToWaypoints.Goal()
         
         # Define some points relative to map (verify your map coordinates, these are examples)
-        p1 = Point(x=1.0, y=0.0, z=0.0)
-        p2 = Point(x=2.0, y=2.0, z=0.0)
-        p3 = Point(x=0.0, y=0.0, z=0.0)
+        # Define waypoints that create a path and do NOT end at start (0,0)
+        # to avoid premature "Goal Reached" by the controller.
+        p1 = Point(x=0.00, y=3.52, z=0.0)
+        p2 = Point(x=1.51, y=3.81, z=0.0)
+        p3 = Point(x=4.59, y=3.52, z=0.0)
         
         goal_msg.waypoints = [p1, p2, p3]
 
