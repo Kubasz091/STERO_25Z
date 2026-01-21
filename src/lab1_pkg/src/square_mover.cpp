@@ -1,8 +1,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp" // Added
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "nav_msgs/msg/path.hpp" // Added
+#include "nav_msgs/msg/path.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include <chrono>
@@ -27,7 +27,7 @@ public:
         // Parameters
         this->declare_parameter("square_len", 1.0);
         this->declare_parameter("laps", 1);
-        this->declare_parameter("direction", "ccw"); // cw or ccw
+        this->declare_parameter("direction", "ccw");
         this->declare_parameter("linear_brake_dist", 0.2);
         this->declare_parameter("angular_brake_dist", 0.5);
         this->declare_parameter("inertia_factor", 1.0); 
@@ -71,7 +71,7 @@ public:
         // Initial state
         first_odom_ = true;
         target_yaw_ = 0.0;
-        last_log_time_ = 0.0; // Initialize last log time
+        last_log_time_ = 0.0;
         logging_counter_ = 0.0;
     }
 
@@ -92,14 +92,14 @@ private:
         geometry_msgs::msg::PoseStamped pose_stamped;
         pose_stamped.header = msg->header;
         pose_stamped.pose = msg->pose.pose;
-        path_.header = msg->header; // Update frame info
+        path_.header = msg->header; 
         path_.poses.push_back(pose_stamped);
         pub_path_->publish(path_);
 
         if (first_odom_) {
              start_pose_ = current_pose_;
              first_odom_ = false;
-             state_ = INIT_MOVE; // Start moving once we have odometry
+             state_ = INIT_MOVE;
         }
     }
 
@@ -288,7 +288,7 @@ private:
     }
 
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_cmd_;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub_path_; // Added
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub_path_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_gt_;
     rclcpp::TimerBase::SharedPtr timer_;
@@ -297,7 +297,7 @@ private:
     nav_msgs::msg::Odometry current_pose_;
     nav_msgs::msg::Odometry start_pose_;
     nav_msgs::msg::Odometry gt_pose_;
-    nav_msgs::msg::Path path_; // Added
+    nav_msgs::msg::Path path_;
     bool first_odom_;
     double target_yaw_;
 
